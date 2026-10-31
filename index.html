@@ -333,7 +333,7 @@ details.more .note{margin-top:6px}
       </div>
       <button class="ghost" id="impOpen" aria-expanded="false" aria-controls="impBox">証券会社の保有一覧のスクショから読み込む</button>
       <div class="pickbox" id="impBox" hidden>
-        <p class="note">証券会社のアプリやサイトで保有一覧の画面をスクショして選ぶと、投信と金額を読み取ります。何枚でも選べます。写真はこのスマホの中で読み取り、どこにも送りません。</p>
+        <p class="note">証券会社のアプリやサイトで保有一覧の画面をスクショして選ぶと、投信と金額を読み取ります。下までスクロールして何枚かに分けて撮ったときは、まとめて選んでください（重なって写った分は1回だけ数えます）。写真はこのスマホの中で読み取り、どこにも送りません。</p>
         <button class="cta" id="ocrBtn">スクショを選ぶ</button><input type="file" id="ocrFile" accept="image/*" multiple hidden>
         <div id="ocrMsg" class="note" hidden></div>
         <details class="more imphow"><summary>ほかの入れ方（文字の貼り付け・CSV）</summary>
@@ -1016,6 +1016,7 @@ details.more .note{margin-top:6px}
   const nnum = v => { if (v == null) return null; if (/\d,\d{0,2}(?!\d)|\d,\d{4}/.test(String(v))) return null; const s = String(v).normalize('NFKC').replace(/[,\s円口株"]/g, ''); if (!/^\d+(\.\d+)?$/.test(s)) return null; const n = Number(s); return n > 0 ? n : null; };
   const LOOKS_FUND = { test: t => /インデックス|ファンド|オープン|投信|株式|ETF|戦略|コース|分配/.test(t) && !/株式会社|\(株\)|ホールディングス/.test(t) };
   // 貼り付けた文字から読み取る
+  const IMG_SEP = '----次の写真----';
   function parsePaste(raw){
     const lines = String(raw || '').normalize('NFKC').split(/\r?\n/).map(x => x.trim()).filter(Boolean);
     let N = ''; const st = [];
@@ -1050,13 +1051,14 @@ details.more .note{margin-top:6px}
     const odd = oddL.filter(([a, b]) => !pick.some(h => h.a <= b && a <= h.b)).map(([a, b]) => lines.slice(a, b + 1).join(''));
     const used = new Set(); pick.forEach(h => { for (let i = h.a; i <= h.b; i++) used.add(i); });
     // 投信名らしいのに一致しなかった行（このアプリに無い投信）。ここで区切りにもする
-    const isMiss = i => !used.has(i) && LOOKS_FUND.test(lines[i]) && normQ(lines[i]).length >= 8 && !/\d\s*(円|口)|口座|合計|評価|損益|一覧|積立|NISA|特定|一般|詳細|内訳|分配金コース|受取型|再投資型/.test(lines[i]);
+    const isMiss = i => !used.has(i) && LOOKS_FUND.test(lines[i]) && normQ(lines[i]).length >= 8 && !/\d\s*(円|口)|口座|合計|評価|損益|一覧|積立|NISA|特定|一般|詳細|内訳|分配金コース|受取型|再投資型|現物|信用|国内株式\(|米国株式\(/.test(lines[i]);
     const miss = lines.filter((l, i) => isMiss(i));
     let items = pick.map((h, i) => {
       let to = i + 1 < pick.length ? pick[i + 1].a : lines.length;
       for (let x = h.b + 1; x < to; x++) if (isMiss(x)){ to = x; break; }
       const seg = lines.slice(h.b, Math.max(h.b + 1, to));
-      return Object.assign({ f: h.f, hasNum: seg.some(l => NUMLINE.test(l)) }, readSeg(seg));
+      const img = lines.slice(0, h.a).filter(l => l === IMG_SEP).length;
+      return Object.assign({ f: h.f, img, hasNum: seg.some(l => NUMLINE.test(l)) }, readSeg(seg.filter(l => l !== IMG_SEP)));
     });
     // 「評価額 合計」の数字を、どれかの投信の金額と取り違えない
     const totals = new Set();
@@ -1224,9 +1226,13 @@ details.more .note{margin-top:6px}
       for (let i = 0; i < files.length; i++){
         ocrSay(`読み取っています…（${i + 1}／${files.length}枚）`);
         const r = await w.recognize(files[i]);
-        text += (r && r.data && r.data.text || '') + '\n';
+        text += (i ? '\n' + IMG_SEP + '\n' : '') + (r && r.data && r.data.text || '') + '\n';
       }
-      ocrSay(''); showImp(parsePaste(ocrFix(text)), files.length > 1 ? `${files.length}枚のスクショ` : 'スクショ');
+      const res = parsePaste(ocrFix(text));
+      // スクロールして撮ると同じ投信が2枚に写る。別の写真で同じ投信・同じ金額なら重なりとみなして1回だけ数える
+      const seen = new Map();
+      res.items = res.items.filter(it => { if (it.value == null) return true; const k = it.f.code + '|' + Math.round(it.value); if (seen.has(k) && seen.get(k) !== it.img) return false; if (!seen.has(k)) seen.set(k, it.img); return true; });
+      ocrSay(''); showImp(res, files.length > 1 ? `${files.length}枚のスクショ` : 'スクショ');
     } catch(err){
       ocrSay('読み取れませんでした。電波のよい所でもう一度試すか、「ほかの入れ方」から文字を貼り付けてください。');
     } finally { ocrBusy = false; $('#ocrBtn').disabled = false; }
