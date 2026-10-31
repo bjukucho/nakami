@@ -194,6 +194,37 @@ details.more .note{margin-top:6px}
 .chip .x{all:unset;cursor:pointer;color:var(--muted);font-size:15px;line-height:1;padding:6px 10px 6px 6px}
 .ghost{font:inherit;font-size:14px;font-weight:600;padding:10px;border:1px solid var(--accent);border-radius:10px;background:transparent;color:var(--accent);cursor:pointer}
 .cta:disabled{opacity:.45;cursor:default}
+.pickbox{display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--line-2);padding-top:10px}
+.pickbox input[type=search]{font:inherit;font-size:16px;padding:9px 10px;border:1px solid var(--line-2);border-radius:9px;background:var(--bg);color:var(--ink);width:100%;min-width:0}
+.picklist{max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.pickh{position:sticky;top:0;z-index:1;background:var(--bg);color:var(--ink-2);font-size:12px;font-weight:600;padding:6px 10px;border-bottom:1px solid var(--line)}
+.pickit{display:grid;grid-template-columns:22px 1fr auto;gap:1px 10px;align-items:center;padding:9px 10px;border-bottom:1px solid var(--line);cursor:pointer}
+.pickit:last-child{border-bottom:0}
+.pickit input{width:20px;height:20px;margin:0;accent-color:var(--accent)}
+.pickit b{font-size:14.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pickit em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--accent);background:var(--accent-wash);border-radius:6px;padding:1px 6px}
+.pickit small{grid-column:2/4;font-size:11.5px;color:var(--muted);line-height:1.35}
+.pickit.done{cursor:default}
+.pickit.done b,.pickit.done small{color:var(--muted)}
+.pickempty{margin:0;padding:16px;text-align:center;color:var(--muted);font-size:13px}
+.pickbar{display:flex;gap:8px;align-items:center}
+.pickbar .cta{margin:0;flex:1}
+.pickbar .cta:disabled{opacity:1;background:var(--line);color:var(--ink-2)}
+.pickbar .rm{margin-left:0;padding:10px 12px}
+.pickbox textarea{font:inherit;font-size:16px;line-height:1.45;padding:9px 10px;border:1px solid var(--line-2);border-radius:9px;background:var(--bg);color:var(--ink);width:100%;min-width:0;resize:vertical}
+.impsteps{margin:6px 0 0;padding-left:1.4em;font-size:13px;color:var(--ink-2);display:flex;flex-direction:column;gap:3px}
+.imphow{border-top:0;padding-top:0}
+.impout{display:flex;flex-direction:column;gap:8px}
+.imph{margin:0;font-weight:700;font-size:14px}
+.impit{display:grid;grid-template-columns:22px 1fr auto;gap:2px 10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--bg);cursor:pointer}
+.impit input{width:20px;height:20px;margin:0;accent-color:var(--accent)}
+.impit b{font-size:14.5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.impit em{font-style:normal;font-size:10.5px;font-weight:700;color:var(--accent);background:var(--accent-wash);border-radius:6px;padding:1px 6px;white-space:nowrap}
+.impit small{grid-column:2/4;font-size:12px;color:var(--ink-2);line-height:1.4}
+.impit small.src{color:var(--muted);font-size:11.5px}
+.impit:has(input:not(:checked)){opacity:.55}
+.impmiss{margin:0;font-size:12.5px;color:var(--ink-2);background:var(--bg);border:1px dashed var(--line-2);border-radius:10px;padding:8px 10px}
+.impmiss ul{margin:4px 0 0;padding-left:1.2em}
 .sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:30}
 .sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(720px,100%);max-height:86vh;background:var(--surface);border-radius:18px 18px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.18);z-index:31;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)}
 .sheet-head{padding:14px 16px 10px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
@@ -228,7 +259,7 @@ details.more .note{margin-top:6px}
   <div class="sample" id="sampleNote" hidden>いま出ているのは見本の数字です。自分の投信を入れると、自分の中身に切り替わります。<button class="cta" id="goInput">自分の投信を入れる</button></div>
 
   <section class="summary" aria-label="まとめ">
-    <div class="big"><div class="lbl">投信の評価額 合計</div><div class="val num" id="sumTotal">—</div></div>
+    <div class="big"><div class="lbl">投信の評価額 合計（参考値）</div><div class="val num" id="sumTotal">—</div></div>
     <div><div class="lbl">損益</div><div class="val num pl" id="sumPL">—</div></div>
     <div><div class="lbl">いちばん多い会社</div><div class="val" id="sumTop" style="font-size:15px">—</div></div>
     <div style="grid-column:1/-1"><div class="lbl">中身が見えている割合 <span class="num" id="sumCover"></span></div><div class="coverbar"><i id="coverFill" style="width:0"></i></div></div>
@@ -295,6 +326,24 @@ details.more .note{margin-top:6px}
   <section class="panel" id="p-in" hidden>
     <div class="card"><label for="addFund" class="lbl">持っている投信を追加</label>
       <div class="addrow"><select id="addFund"></select></div>
+      <button class="ghost" id="pickOpen" aria-expanded="false" aria-controls="pickBox">名前で探して、まとめて選ぶ</button>
+      <div class="pickbox" id="pickBox" hidden>
+        <input id="pickQ" type="search" enterkeyhint="search" autocomplete="off" placeholder="例 オルカン、S&amp;P、高配当" aria-label="投信の名前で探す">
+        <div class="picklist" id="pickList" role="group" aria-label="追加する投信"></div>
+        <div class="pickbar"><button class="cta" id="pickAdd" disabled>投信に印を付けてください</button><button class="rm" id="pickClose">閉じる</button></div>
+      </div>
+      <button class="ghost" id="impOpen" aria-expanded="false" aria-controls="impBox">証券会社の画面やCSVから読み込む</button>
+      <div class="pickbox" id="impBox" hidden>
+        <p class="note">証券会社の保有一覧の文字を貼り付けるか、保有一覧のCSVファイルを選ぶと、持っている投信と口数・金額を読み取ります。読み取りはこのスマホの中だけで行います。</p>
+        <details class="more imphow"><summary>スクショから文字をコピーする方法（iPhone）</summary>
+          <ol class="impsteps"><li>証券会社のアプリやサイトで、保有一覧の画面をスクショする</li><li>写真アプリでそのスクショを開き、文字を長押しして「すべてを選択」→「コピー」</li><li>下の枠を長押しして「ペースト」</li></ol>
+          <p class="note">証券会社のサイトなら、画面の文字をそのまま選んでコピーしても読み取れます。何枚かに分かれるときは、続けて貼り付けてかまいません。投信の行を開いて口数・平均取得価額も写っていると、損益まで出ます。</p>
+        </details>
+        <textarea id="impText" rows="5" placeholder="ここに貼り付け" aria-label="保有一覧の文字"></textarea>
+        <div class="pickbar"><button class="cta" id="impRead">読み取る</button><button class="rm" id="impFileBtn">CSVを選ぶ</button><input type="file" id="impFile" accept=".csv,text/csv,text/plain,text/comma-separated-values" hidden></div>
+        <div id="impOut" class="impout" hidden></div>
+        <div class="pickbar" id="impBar" hidden><button class="cta" id="impApply" disabled>入れる投信に印を付けてください</button><button class="rm" id="impClose">閉じる</button></div>
+      </div>
       </div>
     <p class="note">持っている投信を追加して、いま持っている金額を入れると、中身が合算されます。入力はこのスマホの中だけに保存され、ほかの人には見えません。「↑」「↓」で並び順を変えられます。</p>
     <div id="inList" class="panel"></div>
@@ -358,10 +407,22 @@ details.more .note{margin-top:6px}
   const priceOf = f => isJpy(f) ? f.priceJpy : f.priceUsd;
   const fmtPrice = (f, v) => v == null ? '—' : (isJpy(f) ? Number(v).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '円' : usd(v));
   function fxOf(f){ if (isJpy(f)) return 1; const p = positions[f.code] || {}; return numOrNull(p.fxOverride) ?? f.fxUsdJpy ?? null; }
+  // 計算に使う基準価額（株価）：手で入れた値 → 読み込んだ値（アプリの月次データより新しい間だけ） → 月次データ
+  function navOf(f){
+    const p = positions[f.code] || {}, e = isEtf(f);
+    const m = numOrNull(p.navOverride);
+    if (m != null) return { nav: m, at: null, src: 'manual' };
+    if (!e && p.navImp && numOrNull(p.navImp.v) && String(p.navImp.at || '') > String(f.asOf || '')) return { nav: +p.navImp.v, at: p.navImp.at, src: 'imp' };
+    return { nav: e ? priceOf(f) : f.nav, at: e ? (f.priceAsOf || f.asOf) : f.asOf, src: 'rep' };
+  }
+  const fmtMD = s => { const m = String(s || '').match(/\d{4}-(\d{2})-(\d{2})/); return m ? `${+m[1]}月${+m[2]}日` : ''; };
+  const navTxt = (f, n) => n.nav == null ? '—' : (isEtf(f) ? fmtPrice(f, n.nav) : Number(n.nav).toLocaleString('ja-JP', { maximumFractionDigits: 2 }) + '円');
+  const navWhen = n => fmtMD(n.at) + (n.src === 'imp' ? '読み込み' : '');
+  function navNote(f){ const n = navOf(f); return n.src === 'manual' ? '入力した値' : `参考値・${navWhen(n)} ${navTxt(f, n)}`; }
   function fundValue(f){
     const p = positions[f.code] || {};
     const e = isEtf(f);
-    const nav = numOrNull(p.navOverride) ?? (e ? priceOf(f) : f.nav);
+    const nav = navOf(f).nav;
     const units = numOrNull(p.units);
     if (e){ const fx = fxOf(f); if (units && nav && fx) return { value: units * nav * fx, nav, units, src: 'units' }; }
     else if (units && nav) return { value: units * nav / 10000, nav, units, src: 'units' };
@@ -595,10 +656,10 @@ details.more .note{margin-top:6px}
         <div class="fields">
           ${e ? `<label>株数<input id="u-${esc(f.code)}" data-f="units" inputmode="decimal" placeholder="例 100" value="${esc(fmtIn(p.units))}"></label>
           <label>平均取得単価（${isJpy(f) ? '円' : 'ドル'}）<input id="a-${esc(f.code)}" data-f="avgCost" inputmode="decimal" placeholder="${isJpy(f) ? '例 1,200' : '例 45.20'}" value="${esc(fmtIn(p.avgCost))}"></label>
-          <label${isJpy(f) ? ' class="full"' : ''}>株価（空なら ${fmtPrice(f, priceOf(f))}）<input id="n-${esc(f.code)}" data-f="navOverride" inputmode="decimal" placeholder="${priceOf(f) != null ? (isJpy(f) ? priceOf(f) : Number(priceOf(f)).toFixed(2)) : ''}" value="${esc(fmtIn(p.navOverride))}"></label>
+          <label${isJpy(f) ? ' class="full"' : ''}>株価（空なら参考値 ${fmtPrice(f, priceOf(f))}）<input id="n-${esc(f.code)}" data-f="navOverride" inputmode="decimal" placeholder="${priceOf(f) != null ? (isJpy(f) ? priceOf(f) : Number(priceOf(f)).toFixed(2)) : ''}" value="${esc(fmtIn(p.navOverride))}"></label>
           ${isJpy(f) ? '' : `<label>ドル円（空なら ${f.fxUsdJpy ? f.fxUsdJpy + '円' : '—'}）<input id="x-${esc(f.code)}" data-f="fxOverride" inputmode="decimal" placeholder="${f.fxUsdJpy || ''}" value="${esc(fmtIn(p.fxOverride))}"></label>`}` : `<label>口数<input id="u-${esc(f.code)}" data-f="units" inputmode="numeric" placeholder="例 1,234,567" value="${esc(fmtIn(p.units))}"></label>
           <label>平均取得価額（1万口あたり円）<input id="a-${esc(f.code)}" data-f="avgCost" inputmode="decimal" placeholder="例 25,000" value="${esc(fmtIn(p.avgCost))}"></label>
-          <label class="full">基準価額（空ならレポートの ${f.nav ? Number(f.nav).toLocaleString('ja-JP') : '—'}円）<input id="n-${esc(f.code)}" data-f="navOverride" inputmode="decimal" placeholder="${f.nav ? Number(f.nav).toLocaleString('ja-JP') : ''}" value="${esc(fmtIn(p.navOverride))}"></label>`}
+          <label class="full">基準価額（空なら参考値 ${(n => navTxt(f, n) + '・' + navWhen(n))(navOf(f).src === 'manual' ? { nav: f.nav, at: f.asOf } : navOf(f))}）<input id="n-${esc(f.code)}" data-f="navOverride" inputmode="decimal" placeholder="${f.nav ? Number(f.nav).toLocaleString('ja-JP') : ''}" value="${esc(fmtIn(p.navOverride))}"></label>`}
         </div>
         <p class="note">口数・株数と取得価額は、証券会社の保有一覧に出ています。</p>
         </details>
@@ -615,7 +676,7 @@ details.more .note{margin-top:6px}
       const share = r.total ? v.value / r.total * 100 : 0;
       let pl = '';
       if (c != null && v.src === 'units'){ const d = v.value - c; pl = `<span>損益 <b class="pl ${d>=0?'up':'down'} num">${d>=0?'+':'−'}${yen(Math.abs(d))}（${(d/c*100).toFixed(1)}%）</b></span>`; }
-      el.innerHTML = `<span>評価額 <b class="num">${yen(v.value)}</b> <span class="lbl">${v.src === 'units' ? (isEtf(f) ? (isJpy(f) ? '株数×株価' : '株数×株価×ドル円') : '口数×基準価額') : '直接入力'}・全体の${pct(share)}</span></span>${pl}${pl && isEtf(f) && !isJpy(f) ? '<span class="lbl" style="width:100%">損益は取得単価と今の株価の差を、今のドル円で円にしたものです</span>' : ''}`;
+      el.innerHTML = `<span>評価額 <b class="num">${yen(v.value)}</b> <span class="lbl">${v.src === 'units' ? (isEtf(f) ? (isJpy(f) ? '株数×株価' : '株数×株価×ドル円') : '口数×基準価額') + '（' + esc(navNote(f)) + '）' : '直接入力'}・全体の${pct(share)}</span></span>${pl}${pl && isEtf(f) && !isJpy(f) ? '<span class="lbl" style="width:100%">損益は取得単価と今の株価の差を、今のドル円で円にしたものです</span>' : ''}`;
     }
   }
   // ---- 一覧：種類ごとに分けて並べる ----
@@ -881,6 +942,311 @@ details.more .note{margin-top:6px}
     setFunds(); persist(); render();
   });
 
+
+  // ---- 名前で探して、まとめて選ぶ ----
+  const pickSel = new Set();
+  const NICK = { '0331418A': 'オルカン オールカントリー', '9I312179': 'VTI', '9I311179': 'VT', '64311215': '5G', '29314233': '半導体', '0431Q169': 'ダウ', '64313266': 'トレンドランキング' };
+  const SYN = [[/ヴァ/g, 'バ'], [/ニッケイ/g, '日経'], [/トピックス/g, 'topix'], [/\bsp(?=\d)/g, 's&p'], [/ナスダック/g, 'nasdaq'], [/エスアンドピー|エスピー/g, 's&p'], [/スリム/g, 'slim'], [/イーマクシス/g, 'emaxis'], [/ファング/g, 'fang'], [/アイフリー/g, 'ifree'], [/バンガード/g, 'vanguard'], [/グローバルエックス/g, 'globalx'], [/トレーサーズ/g, 'tracers'], [/ソックス/g, 'sox']];
+  function normQ(t){
+    t = String(t || '').normalize('NFKC').toLowerCase().replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60));
+    for (const [re, to] of SYN) t = t.replace(re, to);
+    return t.replace(/[\s・･\-‐ー―〜~\/()［］\[\]<>「」、。,.:：]/g, '');
+  }
+  function tagsOf(f){
+    const n = String(f.name || '').normalize('NFKC'), t = [];
+    if (isEtf(f) || /米国|全米|S&P|NASDAQ|ダウ|FANG|SOX|メガ10/.test(n)) t.push('米国 アメリカ');
+    if (/国内|TOPIX|日経|ひふみ/.test(n)) t.push('日本 国内 日本株');
+    if (/日経平均/.test(n)) t.push('日経225');
+    if (/全世界|世界/.test(n)) t.push('全世界 世界');
+    const k = kindOf(f); if (k === 'didx' || k === 'dact') t.push('毎月 分配');
+    if (/三菱UFJ/.test(f.company || '')) t.push('MUFG');
+    return t.join(' ');
+  }
+  const hayCache = new Map();
+  function hay(f){
+    if (!hayCache.has(f.code)) hayCache.set(f.code, normQ([f.short, f.name, f.company, f.code, NICK[f.code] || '', tagsOf(f), (KINDS.find(k => k.id === kindOf(f)) || {}).name || ''].join(' ')));
+    return hayCache.get(f.code);
+  }
+  function pickOrder(){ return KINDS.flatMap(k => ALL.filter(f => kindOf(f) === k.id).sort((a, b) => (a.order || 99) - (b.order || 99))); }
+  function pickHeld(){ return new Set(sample ? [] : sel); }
+  function renderPickList(){
+    const q = $('#pickQ').value.trim();
+    const terms = q.split(/[\s　]+/).map(normQ).filter(Boolean);
+    const held = pickHeld();
+    const html = KINDS.map(k => {
+      const g = ALL.filter(f => kindOf(f) === k.id && terms.every(t => hay(f).includes(t))).sort((a, b) => (a.order || 99) - (b.order || 99));
+      if (!g.length) return '';
+      return `<div class="pickh">${esc(k.name)}</div>` + g.map(f => {
+        const h = held.has(f.code);
+        return `<label class="pickit${h ? ' done' : ''}"><input type="checkbox" value="${esc(f.code)}"${h || pickSel.has(f.code) ? ' checked' : ''}${h ? ' disabled' : ''}><b>${esc(f.short || f.name)}</b>${h ? '<em>追加済み</em>' : '<span></span>'}<small>${esc(f.name)}</small></label>`;
+      }).join('');
+    }).join('');
+    $('#pickList').innerHTML = html || `<p class="pickempty">「${esc(q)}」に合う投信はありません。ほかの言葉でも探してみてください。</p>`;
+    updatePickBtn();
+  }
+  function updatePickBtn(){
+    const held = pickHeld();
+    const n = [...pickSel].filter(c => !held.has(c)).length;
+    const b = $('#pickAdd');
+    b.disabled = !n;
+    b.textContent = n ? `選んだ${n}本を追加` : '投信に印を付けてください';
+  }
+  function togglePick(open){
+    $('#pickBox').hidden = !open; $('#pickOpen').hidden = open;
+    $('#pickOpen').setAttribute('aria-expanded', open);
+    if (open){ pickSel.clear(); $('#pickQ').value = ''; renderPickList(); $('#pickList').scrollTop = 0; }
+  }
+  $('#pickOpen').addEventListener('click', () => togglePick(true));
+  $('#pickClose').addEventListener('click', () => { togglePick(false); $('#pickOpen').focus(); });
+  $('#pickQ').addEventListener('input', renderPickList);
+  $('#pickQ').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); e.target.blur(); } });
+  $('#pickList').addEventListener('change', e => {
+    const c = e.target.value; if (!c) return;
+    e.target.checked ? pickSel.add(c) : pickSel.delete(c);
+    updatePickBtn();
+  });
+  $('#pickAdd').addEventListener('click', () => {
+    if (document.activeElement && $('#inList').contains(document.activeElement)) document.activeElement.blur();
+    if (sample){ sample = false; sel = []; positions = {}; }
+    const add = pickOrder().map(f => f.code).filter(c => pickSel.has(c) && !sel.includes(c));
+    if (!add.length) return;
+    add.forEach(c => { sel.push(c); positions[c] = positions[c] || { code: c }; });
+    setFunds(); persist(); togglePick(false); render();
+    setTimeout(() => { const el = document.getElementById('v-' + add[0]); if (el){ el.closest('.card').scrollIntoView({ block: 'start', behavior: 'smooth' }); el.focus({ preventScroll: true }); } }, 0);
+  });
+
+  // ---- 証券会社の画面やCSVから読み込む ----
+  const impKeys = new Map(); // code -> 照合用の名前（正規化済み）
+  let keyCnt = null;
+  function keysOf(f){
+    if (!keyCnt){ keyCnt = new Map(); ALL.forEach(g => rawKeys(g).forEach(k => keyCnt.set(k, (keyCnt.get(k) || 0) + 1))); }
+    if (!impKeys.has(f.code)) impKeys.set(f.code, rawKeys(f).filter(k => keyCnt.get(k) === 1));
+    return impKeys.get(f.code);
+  }
+  function rawKeys(f){
+    const n = String(f.name || '').normalize('NFKC'), k = new Set();
+    k.add(normQ(n));
+    k.add(normQ(n.replace(/\(愛称:[^)]*\)/g, '')));
+    const ang = n.match(/<[^>]*>/g);
+    if (ang) k.add(normQ(ang.join('') + n.replace(/<[^>]*>/g, ''))); // ＜…＞が名前の前に付く書き方
+    if (isEtf(f)){ const m = n.match(/^(.*?)\((.*)\)\s*$/); if (m){ k.add(normQ(m[1])); k.add(normQ(m[2])); } }
+    return [...k].filter(x => x.length >= 6);
+  }
+  const TICK = f => {
+    if (!isEtf(f)) return null;
+    const c = f.code.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return /^\d+$/.test(f.code) ? new RegExp('^' + c + '(?![\\d,.])(?!\\s*(?:円|口|株|%|/|:))') : new RegExp('(^|[^A-Za-z0-9,.])' + c + '(?![A-Za-z0-9,.])');
+  };
+  // 一致した名前のすぐ後ろに、別の型を示す言葉が続く／名前が「…」で切れている → 似た別の投信かもしれないので入れない
+  const VARIANT = /^(為替ヘッジあり|ヘッジあり|毎月|年\d回|資産成長|決算|予想分配|隔月|3ヵ月|3か月)/;
+  const badTail = (f, tail) => VARIANT.test(tail) && !normQ(f.name).includes(tail.slice(0, 4));
+  // 1つの名前（CSVの銘柄名など）からいちばん長く一致する投信を探す
+  function matchName(name, code){
+    const t = String(code || '').normalize('NFKC').trim().toUpperCase();
+    if (t){ const f = ALL.find(f => isEtf(f) && f.code.toUpperCase() === t); if (f) return f; }
+    const q = normQ(name); let best = null, bl = 0;
+    if (/(\.\.\.|…)\s*$/.test(String(name || '').normalize('NFKC'))) return null;
+    for (const f of ALL) for (const k of keysOf(f)){ const i = q.indexOf(k); if (k.length > bl && i >= 0 && !badTail(f, q.slice(i + k.length, i + k.length + 12))){ best = f; bl = k.length; } }
+    if (!best) for (const f of ALL){ const re = TICK(f); if (re && re.test(String(name || '').normalize('NFKC'))){ best = f; break; } }
+    return best;
+  }
+  const nnum = v => { if (v == null) return null; const s = String(v).normalize('NFKC').replace(/[,\s円口株"]/g, ''); if (!/^\d+(\.\d+)?$/.test(s)) return null; const n = Number(s); return n > 0 ? n : null; };
+  const LOOKS_FUND = { test: t => /インデックス|ファンド|オープン|投信|株式|ETF|戦略|コース|分配/.test(t) && !/株式会社|\(株\)|ホールディングス/.test(t) };
+  // 貼り付けた文字から読み取る
+  function parsePaste(raw){
+    const lines = String(raw || '').normalize('NFKC').split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+    let N = ''; const st = [];
+    lines.forEach(l => { st.push(N.length); N += normQ(l); });
+    const lineAt = pos => { let i = 0; while (i + 1 < st.length && st[i + 1] <= pos) i++; return i; };
+    const hits = [];
+    for (const f of ALL){
+      for (const k of keysOf(f)){ let i = N.indexOf(k); while (i >= 0){ hits.push({ s: i, e: i + k.length, f, a: lineAt(i), b: lineAt(i + k.length - 1) }); i = N.indexOf(k, i + 1); } }
+      const re = TICK(f); if (re) lines.forEach((l, li) => { if (re.test(l)) hits.push({ s: st[li], e: st[li] + 1, f, a: li, b: li }); });
+    }
+    hits.sort((x, y) => x.s - y.s || (y.e - y.s) - (x.e - x.s));
+    const pick = []; let end = -1;
+    for (const h of hits){ if (h.s >= end){ pick.push(h); end = h.e; } else if (h.s === pick[pick.length - 1]?.s && h.e > end){ pick[pick.length - 1] = h; end = h.e; } }
+    const odd = [];
+    for (let i = pick.length - 1; i >= 0; i--){ const h = pick[i]; if (badTail(h.f, N.slice(h.e, h.e + 12)) || /(\.\.\.|…)\s*$/.test(lines[h.b])){ odd.push(lines.slice(h.a, h.b + 1).join('')); pick.splice(i, 1); } }
+    const used = new Set(); pick.forEach(h => { for (let i = h.a; i <= h.b; i++) used.add(i); });
+    // 投信名らしいのに一致しなかった行（このアプリに無い投信）。ここで区切りにもする
+    const isMiss = i => !used.has(i) && LOOKS_FUND.test(lines[i]) && normQ(lines[i]).length >= 8 && !/\d\s*(円|口)|口座|合計|評価|損益|一覧|積立|NISA|特定|一般|詳細|内訳/.test(lines[i]);
+    const miss = lines.filter((l, i) => isMiss(i));
+    const NUMLINE = /\d\s*(円|口|株)|^[¥￥]\s*\d/;
+    let items = pick.map((h, i) => {
+      let to = i + 1 < pick.length ? pick[i + 1].a : lines.length;
+      for (let x = h.b + 1; x < to; x++) if (isMiss(x)){ to = x; break; }
+      const seg = lines.slice(h.b, Math.max(h.b + 1, to));
+      return Object.assign({ f: h.f, hasNum: seg.some(l => NUMLINE.test(l)) }, readSeg(seg));
+    });
+    // 数字のない投信名がある・最初の投信名より前に金額があって最後の投信の後に数字がない → 並びが読めない
+    const anyNum = lines.some(l => NUMLINE.test(l));
+    const before = pick.length ? lines.slice(0, pick[0].a).some(l => NUMLINE.test(l) && !/合計|総額|総資産|資産/.test(l)) : false;
+    const order = anyNum && items.length > 0 && (items.some(it => !it.hasNum) || (before && !items[items.length - 1].hasNum));
+    if (order) items = [];
+    miss.push(...odd);
+    return { items, miss, order };
+  }
+  function readSeg(segLines){
+    const S = segLines.join('\n');
+    const g = re => { const m = S.match(re); return m ? nnum(m[1]) : null; };
+    const L = '(?:\\s*[(（][^)）]*[)）])?[^\\d+\\-−]{0,10}?'; // 見出しのすぐ後の（1万口あたり）などは読み飛ばす
+    const lab = (w, tail) => g(new RegExp('(?:' + w + ')' + L + '([\\d,]+(?:\\.\\d+)?)' + (tail || '')));
+    const units = lab('保有数量|保有口数|口数|数量') ?? g(/([\d,]+(?:\.\d+)?)\s*(?:口(?!座)|株(?!式))/);
+    const avg = lab('平均取得価額|平均取得単価|取得単価|平均取得価格');
+    const nav = lab('基準価額|現在値|現在価格');
+    let value = g(new RegExp('(?:時価評価額|評価額|評価金額)' + L + '[¥￥]?\\s*(\\d{1,3}(?:,\\d{3})+|\\d+)(?![\\d.,万])'));
+    if (value == null){
+      // 見出しが無いとき：符号の付かない最初の「〜円」か「¥〜」
+      const re = /([¥￥]\s*)?(\d{1,3}(?:,\d{3})+|\d{4,})(?![\d.,万])(\s*円)?/g; let m;
+      while ((m = re.exec(S))){
+        if (!m[1] && !m[3]) continue;
+        const ln = S.slice(S.lastIndexOf('\n', m.index) + 1, m.index);
+        if (/取得|単価|基準価額|現在値|損益|リターン|分配金|前日比/.test(ln)) continue;
+        const pc = S.slice(0, m.index).replace(/\s+$/, '').slice(-1);
+        if (/[+\-−.,\d万]/.test(pc)) continue;
+        value = nnum(m[2]); break;
+      }
+    }
+    return { units, avg, nav, value };
+  }
+  // CSV
+  function csvRows(t){
+    const rows = []; let row = [], cell = '', q = false;
+    for (let i = 0; i < t.length; i++){
+      const c = t[i];
+      if (q){ if (c === '"'){ if (t[i + 1] === '"'){ cell += '"'; i++; } else q = false; } else cell += c; }
+      else if (c === '"') q = true;
+      else if (c === ','){ row.push(cell); cell = ''; }
+      else if (c === '\n' || c === '\r'){ if (c === '\r' && t[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = ''; }
+      else cell += c;
+    }
+    if (cell || row.length){ row.push(cell); rows.push(row); }
+    return rows.map(r => r.map(x => x.normalize('NFKC').trim()));
+  }
+  function parseCsv(text){
+    const rows = csvRows(text); const items = [], miss = [];
+    let col = null;
+    const find = (h, res) => { for (const re of res){ const i = h.findIndex(x => re.test(x)); if (i >= 0) return i; } return -1; };
+    for (const r of rows){
+      const nameI = r.findIndex(x => /^(銘柄|銘柄名|銘柄名称|ファンド名|商品名|銘柄・ファンド名)$/.test(x));
+      if (nameI >= 0 && r.some(x => /評価|数量|口数/.test(x))){
+        col = { name: nameI, code: find(r, [/コード|ティッカー/]), kind: find(r, [/^種別$|^商品$|^商品区分$/]),
+          units: find(r, [/^保有数量$/, /^数量$/, /口数/, /数量/]), avg: find(r, [/平均取得価額/, /平均取得単価/, /取得単価/]),
+          nav: find(r, [/^基準価額$/, /^現在値$/, /基準価額/, /現在値/]), value: find(r, [/時価評価額\[円\]/, /時価評価額\(円\)/, /^時価評価額$/, /^評価額$/, /評価金額/, /評価額/]) };
+        col.avgUnit = col.avg >= 0 && /単位/.test(r[col.avg + 1] || '') ? col.avg + 1 : -1;
+        continue;
+      }
+      if (!col || !r[col.name]) continue;
+      const name = r[col.name], f = matchName(name, col.code >= 0 ? r[col.code] : '');
+      if (!f){ if (LOOKS_FUND.test(name) && !/^(合計|小計)/.test(name)) miss.push(name); continue; }
+      const it = { f, units: col.units >= 0 ? nnum(r[col.units]) : null, avg: col.avg >= 0 ? nnum(r[col.avg]) : null,
+        nav: col.nav >= 0 ? nnum(r[col.nav]) : null, value: col.value >= 0 ? nnum(r[col.value]) : null };
+      if (col.avgUnit >= 0 && r[col.avgUnit] && !/円/.test(r[col.avgUnit])) it.avg = null;
+      items.push(it);
+    }
+    return { items, miss, sawHeader: !!col };
+  }
+  // 同じ投信（口座ちがいなど）は合算する
+  function mergeItems(items){
+    const m = new Map();
+    for (const it of items.filter(x => x.units != null || x.value != null)){
+      const c = it.f.code;
+      if (!m.has(c)){ m.set(c, Object.assign({ n: 1 }, it)); continue; }
+      const a = m.get(c); a.n++;
+      if (a.units != null && it.units != null){
+        a.avg = a.avg != null && it.avg != null ? (a.avg * a.units + it.avg * it.units) / (a.units + it.units) : null;
+        a.units += it.units;
+      } else { a.units = null; a.avg = null; }
+      a.value = a.value != null && it.value != null ? a.value + it.value : null;
+      a.nav = a.nav ?? it.nav;
+    }
+    return [...m.values()].filter(x => x.units != null || x.value != null);
+  }
+  // 入れる中身：投信は口数（＋平均取得価額）、ETFと口数がないものは金額
+  const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  function impNav(it){
+    let n = it.nav ?? (it.value != null && it.units ? it.value * 10000 / it.units : null);
+    const ref = it.f.nav;
+    if (n == null || !ref || n / ref < 0.5 || n / ref > 2) return null; // 読み違いらしい値は使わない
+    return Math.round(n * 100) / 100;
+  }
+  function impPos(it){
+    const e = isEtf(it.f);
+    if (!e && it.units != null){
+      const o = { units: it.units }; if (it.avg != null) o.avgCost = Math.round(it.avg * 100) / 100;
+      const n = impNav(it); if (n != null) o.navImp = { v: n, at: todayStr() };
+      return o;
+    }
+    if (it.value != null) return { value: Math.round(it.value) };
+    if (it.units != null) return { units: it.units };
+    return null;
+  }
+  let impRes = [];
+  const fmtN = n => Number(n).toLocaleString('ja-JP', { maximumFractionDigits: 2 });
+  function showImp(res, srcLabel){
+    impRes = mergeItems(res.items).map(it => Object.assign(it, { pos: impPos(it), on: true })).filter(it => it.pos);
+    const held = new Set(sample ? [] : sel);
+    let h = '';
+    if (impRes.length){
+      h += `<p class="imph">${esc(srcLabel)}から${impRes.length}本見つかりました</p>`;
+      h += impRes.map((it, i) => {
+        const p = it.pos, e = isEtf(it.f);
+        const what = p.units != null ? `${e ? '株数' : '口数'} ${fmtN(p.units)}${e ? '' : '口'}${p.avgCost != null ? `・平均取得価額 ${fmtN(p.avgCost)}円` : ''}${p.navImp ? `・基準価額 ${fmtN(p.navImp.v)}円` : ''}` : `金額 ${yen(p.value)}`;
+        const note = it.n > 1 ? `${it.n}か所の分を合わせました` : '';
+        return `<label class="impit"><input type="checkbox" data-i="${i}" checked><b>${esc(it.f.short || it.f.name)}</b>${held.has(it.f.code) ? '<em>入力を置きかえ</em>' : '<span></span>'}<small>${esc(what)}</small>${note ? `<small class="src">${esc(note)}</small>` : ''}</label>`;
+      }).join('');
+    } else {
+      h += res.order ? `<p class="imph">名前と金額の並びがうまく読み取れませんでした</p><p class="note">間違った数字が入らないよう、読み込みを止めました。投信を1本ずつコピーして貼り付けると読み取れます。</p>` :
+        `<p class="imph">${esc(srcLabel)}から、このアプリにある投信が見つかりませんでした</p>` + (res.sawHeader === false ? '<p class="note">証券会社の保有一覧のCSVか、確かめてください。</p>' : '<p class="note">投信の名前が切れずに写っているか、確かめてください。</p>');
+    }
+    if (res.miss.length) h += `<div class="impmiss">このアプリにまだ無い投信は入れられません：<ul>${[...new Set(res.miss)].slice(0, 8).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
+    $('#impOut').innerHTML = h; $('#impOut').hidden = false;
+    $('#impBar').hidden = !impRes.length; updateImpBtn();
+    setTimeout(() => $('#impOut').scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 0);
+  }
+  function updateImpBtn(){
+    const n = impRes.filter(x => x.on).length, b = $('#impApply');
+    b.disabled = !n; b.textContent = n ? `${n}本を入れる` : '入れる投信に印を付けてください';
+  }
+  function toggleImp(open){
+    $('#impBox').hidden = !open; $('#impOpen').hidden = open; $('#impOpen').setAttribute('aria-expanded', open);
+    if (!open){ $('#impText').value = ''; $('#impOut').hidden = true; $('#impOut').innerHTML = ''; $('#impBar').hidden = true; impRes = []; $('#impFile').value = ''; }
+  }
+  $('#impOpen').addEventListener('click', () => toggleImp(true));
+  $('#impClose').addEventListener('click', () => { toggleImp(false); $('#impOpen').focus(); });
+  $('#impRead').addEventListener('click', () => {
+    const t = $('#impText').value;
+    if (!t.trim()){ $('#impOut').innerHTML = '<p class="note">上の枠に、保有一覧の文字を貼り付けてください。</p>'; $('#impOut').hidden = false; $('#impBar').hidden = true; return; }
+    $('#impText').blur(); showImp(parsePaste(t), '貼り付けた文字');
+  });
+  $('#impFileBtn').addEventListener('click', () => $('#impFile').click());
+  $('#impFile').addEventListener('change', async e => {
+    const file = e.target.files && e.target.files[0]; if (!file) return;
+    const buf = await file.arrayBuffer(); let text;
+    try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch(err){ try { text = new TextDecoder('shift_jis').decode(buf); } catch(err2){ text = ''; } }
+    text = text.replace(/^﻿/, '');
+    const res = parseCsv(text);
+    if (!res.sawHeader){ const p = parsePaste(text); p.sawHeader = false; showImp(p.items.length ? p : res, 'ファイル'); }
+    else showImp(res, 'CSV');
+    e.target.value = '';
+  });
+  $('#impOut').addEventListener('change', e => { const i = e.target.dataset.i; if (i == null) return; impRes[+i].on = e.target.checked; updateImpBtn(); });
+  $('#impApply').addEventListener('click', () => {
+    const list = impRes.filter(x => x.on); if (!list.length) return;
+    if (document.activeElement && $('#inList').contains(document.activeElement)) document.activeElement.blur();
+    if (sample){ sample = false; sel = []; positions = {}; }
+    for (const it of list){
+      const c = it.f.code, old = positions[c] || {};
+      if (!sel.includes(c)) sel.push(c);
+      const keep = {}; if (old.navOverride != null) keep.navOverride = old.navOverride; if (old.fxOverride != null) keep.fxOverride = old.fxOverride;
+      positions[c] = Object.assign({ code: c }, keep, it.pos);
+      if (it.pos.units != null) openDet.add(c);
+    }
+    setFunds(); persist(); toggleImp(false); render();
+    const first = list[0].f.code;
+    setTimeout(() => { const el = document.querySelector(`#inList .card[data-code="${first}"]`); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 0);
+  });
 
   // ---- 投信の中身（下から出る画面） ----
   let sheetCode = null, sheetGroup = 'co', sheetLimit = 50, sheetReturn = null;
