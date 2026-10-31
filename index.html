@@ -287,6 +287,10 @@ details.more .note{margin-top:6px}
 .hl.unseen .n{color:var(--ink-2);font-weight:500}
 .hl.unseen .b i{background:var(--unseen)}
 .sheet-more{font:inherit;width:100%;margin-top:6px;padding:10px;border:1px solid var(--line-2);border-radius:10px;background:transparent;color:var(--accent);font-weight:600;cursor:pointer}
+.picopen{width:100%}
+#pic .sheet-head .seg button{padding:7px 12px}
+.pic-body{display:flex;flex-direction:column;gap:10px;padding-top:12px}
+.pic-img{display:block;width:100%;height:auto;border-radius:12px;border:1px solid var(--line);background:#f6f7f4;-webkit-touch-callout:default}
 @media (max-width:380px){.fields{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -336,6 +340,7 @@ details.more .note{margin-top:6px}
       <div class="legend" id="legend"></div>
       <div class="seg" role="group" aria-label="表示"><button id="mYen" aria-pressed="true">金額</button><button id="mPct" aria-pressed="false">割合</button></div>
     </div>
+    <button class="ghost picopen" id="picOpen" aria-haspopup="dialog" hidden>上位の会社を画像にする（Xに貼れます）</button>
     <div class="wm wm-co" aria-hidden="true">@besuko_</div>
     <div class="list" id="coList"></div>
     <p class="note">会社名を押すと、どの投信からいくら持っているかが出ます。</p>
@@ -417,6 +422,20 @@ details.more .note{margin-top:6px}
   </div>
   <div class="sheet-body cmp-body" id="cmpList" role="group" aria-label="比べる投信"></div>
   <div class="cmp-foot pickbar"><button class="rm" id="cmpClear">全部外す</button><button class="cta" id="cmpOk">決定</button></div>
+</div>
+<div class="sheet-bg" id="picBg" hidden></div>
+<div class="sheet" id="pic" role="dialog" aria-modal="true" aria-labelledby="picTitle" hidden>
+  <div class="sheet-head">
+    <div class="sheet-top"><h2 id="picTitle">上位の会社を画像にする</h2><button class="sheet-x" id="picX" aria-label="閉じる">×</button></div>
+    <div class="seg" role="group" aria-label="社数"><button data-pn="10" aria-pressed="true">10社</button><button data-pn="20" aria-pressed="false">20社</button><button data-pn="30" aria-pressed="false">30社</button></div>
+    <div class="seg" role="group" aria-label="金額"><button data-pm="0" aria-pressed="true">金額を載せない</button><button data-pm="1" aria-pressed="false">金額を載せる</button></div>
+  </div>
+  <div class="sheet-body pic-body">
+    <p class="note" id="picNote"></p>
+    <img id="picImg" class="pic-img" alt="">
+    <div class="pickbar"><button class="cta" id="picShare" hidden>画像を共有する</button></div>
+    <p class="note" id="picHow"></p>
+  </div>
 </div>
 <div class="sheet-bg" id="sheetBg" hidden></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
@@ -536,6 +555,7 @@ details.more .note{margin-top:6px}
   // ---- 描画 ----
   function render(){
     $('#sampleNote').hidden = !(sample || !funds.length); $('#stNote').hidden = !sample;
+    $('#picOpen').hidden = !(funds.length && compute().total > 0);
     if (!funds.length){
       const msg = '<div class="empty-state">上の「スクショで入れる」「CSVで入れる」「名前で選んで入れる」から投信を入れると、中身がここに出ます。</div>';
       $('#coList').innerHTML = msg; $('#plist').innerHTML = ''; $('#pie').innerHTML = ''; renderHeat(compute()); renderSources();
@@ -1538,6 +1558,77 @@ details.more .note{margin-top:6px}
     if (rest > 0.05) h += line({ name: 'その他（小さい銘柄・現金など）', w: rest, meta: '月次レポート・報告書に載らない部分' }, '—', ' unseen');
     $('#sheetBody').innerHTML = h;
   }
+  // ---- 上位の会社を画像にする（Xなどに貼る用。金額は入れず、割合だけ） ----
+  let picN = 10, picMoney = false, picUrl = null, picFile = null, picReturn = null, picTok = 0;
+  function drawPic(n){
+    const r = compute(), list = r.list.slice(0, n), k = list.length;
+    const W = 1080, rowH = n <= 10 ? 88 : n <= 20 ? 66 : 54, top = 290, foot = 190, H = top + k * rowH + foot;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cv.getContext('2d'), F = '"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif';
+    const fit = (t, w) => { t = String(t); if (g.measureText(t).width <= w) return t; while (t.length > 1 && g.measureText(t + '…').width > w) t = t.slice(0, -1); return t + '…'; };
+    g.fillStyle = '#f6f7f4'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#1f6b45'; g.fillRect(0, 0, W, 14);
+    g.textBaseline = 'alphabetic'; g.textAlign = 'left';
+    g.fillStyle = '#151714'; g.font = `800 66px ${F}`; g.fillText(`${sample ? '見本：' : '私の'}投信の中身 上位${k}社`, 64, 124);
+    const dates = funds.map(f => f.asOf).filter(Boolean).sort();
+    g.fillStyle = '#4f544c'; g.font = `600 32px ${F}`; g.fillText(`${funds.length}本の投信の中身を合算${dates.length ? '・' + fmtMonth(dates[0]) + '時点' : ''}`, 64, 186);
+    g.fillStyle = '#868b82'; g.font = `500 26px ${F}`; g.fillText(picMoney ? `評価額の合計 ${yen(r.total)}・％はこの合計に対する割合` : '％は、持っている投信の評価額の合計に対する割合', 64, 232);
+    const maxP = k ? list[0].total / r.total * 100 : 1, nameX = 150, right = W - 64, barW = right - nameX;
+    const fs = Math.round(rowH * (n <= 10 ? 0.4 : 0.44));
+    list.forEach((e, i) => {
+      const y = top + i * rowH, p = e.total / r.total * 100;
+      if (i % 2 === 0){ g.fillStyle = '#ffffff'; g.fillRect(40, y, W - 80, rowH); }
+      g.fillStyle = i < 3 ? '#1f6b45' : '#868b82'; g.font = `800 ${fs}px ${F}`; g.textAlign = 'right'; g.fillText(String(i + 1), nameX - 28, y + rowH * 0.58); g.textAlign = 'left';
+      g.font = `700 ${fs}px ${F}`; const pt = p.toFixed(2) + '%'; let pw = g.measureText(pt).width;
+      const ys = y + rowH * 0.58;
+      g.textAlign = 'right'; g.fillStyle = '#151714'; g.fillText(pt, right, ys);
+      if (picMoney){ g.font = `600 ${Math.round(fs * 0.86)}px ${F}`; g.fillStyle = '#4f544c'; const yt = yen(e.total); g.fillText(yt, right - pw - 22, ys); pw += 22 + g.measureText(yt).width; g.font = `700 ${fs}px ${F}`; }
+      g.textAlign = 'left'; g.fillStyle = '#151714'; g.fillText(fit(e.name, barW - pw - 24), nameX, ys);
+      g.fillStyle = '#e2e5dd'; g.fillRect(nameX, y + rowH * 0.74, barW, 6);
+      g.fillStyle = i < 3 ? '#1f6b45' : '#5fa57d'; g.fillRect(nameX, y + rowH * 0.74, Math.max(4, barW * p / maxP), 6);
+    });
+    const fy = top + k * rowH + 40;
+    g.fillStyle = '#cdd2c6'; g.fillRect(64, fy, W - 128, 2);
+    g.fillStyle = '#151714'; g.font = `800 38px ${F}`; g.fillText('投信中身マップ', 64, fy + 70);
+    g.fillStyle = '#4f544c'; g.font = `600 28px ${F}`; g.fillText('bjukucho.github.io/nakami', 64, fy + 116);
+    g.fillStyle = '#1f6b45'; g.font = `800 40px ${F}`; g.textAlign = 'right'; g.fillText('@besuko_', W - 64, fy + 70);
+    g.fillStyle = '#868b82'; g.font = `600 24px ${F}`; g.fillText('プロデュース by ベス子', W - 64, fy + 114); g.textAlign = 'left';
+    return cv;
+  }
+  function renderPic(){
+    document.querySelectorAll('#pic [data-pn]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.pn === picN));
+    document.querySelectorAll('#pic [data-pm]').forEach(b => b.setAttribute('aria-pressed', (b.dataset.pm === '1') === picMoney));
+    $('#picHow').textContent = '画像を長押し（パソコンは右クリック）すると保存できます。' + (picMoney ? '金額も写るので、人に見せるときは気をつけてください。' : '金額は写らず、割合だけが入ります。');
+    $('#picNote').textContent = sample ? 'いまは見本の数字です。自分の投信を入れると、自分の中身の画像になります。' : '';
+    const k = Math.min(picN, compute().list.length), cv = drawPic(picN), tok = ++picTok;
+    $('#picImg').alt = `投信の中身 上位${k}社の画像`;
+    cv.toBlob(b => {
+      if (!b || tok !== picTok) return;
+      if (picUrl) URL.revokeObjectURL(picUrl);
+      picUrl = URL.createObjectURL(b); $('#picImg').src = picUrl;
+      picFile = null; let ok = false;
+      try { const f = new File([b], `nakami-top${picN}.png`, { type: 'image/png' }); ok = !!(navigator.canShare && navigator.canShare({ files: [f] })); if (ok) picFile = f; } catch(e){}
+      $('#picShare').hidden = !ok;
+    }, 'image/png');
+  }
+  function openPic(){
+    if (!funds.length || !(compute().total > 0)) return;
+    picMoney = false;
+    picReturn = document.activeElement;
+    $('#picBg').hidden = false; $('#pic').hidden = false; document.body.style.overflow = 'hidden';
+    renderPic(); setTimeout(() => $('#picX').focus(), 0);
+  }
+  function closePic(){
+    $('#picBg').hidden = true; $('#pic').hidden = true; document.body.style.overflow = '';
+    if (picReturn && document.contains(picReturn)) picReturn.focus({ preventScroll: true });
+  }
+  $('#picOpen').addEventListener('click', openPic);
+  $('#picX').addEventListener('click', closePic);
+  $('#picBg').addEventListener('click', closePic);
+  document.querySelectorAll('#pic [data-pn]').forEach(b => b.addEventListener('click', () => { picN = +b.dataset.pn; renderPic(); }));
+  document.querySelectorAll('#pic [data-pm]').forEach(b => b.addEventListener('click', () => { picMoney = b.dataset.pm === '1'; renderPic(); }));
+  $('#picShare').addEventListener('click', async () => { if (!picFile) return; try { await navigator.share({ files: [picFile], text: '私の投信の中身 @besuko_ #投信中身マップ' }); } catch(e){} });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#pic').hidden) closePic(); });
   $('#sheetX').addEventListener('click', closeSheet);
   $('#sheetBg').addEventListener('click', closeSheet);
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && sheetCode) closeSheet(); else if (e.key === 'Escape' && !$('#cmp').hidden) closeCmp(); });
