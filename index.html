@@ -627,6 +627,9 @@ details.more .note{margin-top:6px}
 
   // ---- 上位20：比べる投信を自由に選ぶ ----
   const HEAT_MAX = 10;
+  // 中身がほぼ同じ投信（同じ指数・同じETFに投資）。先頭を代表にする
+  const SAME = [['03311187', '89311199'], ['9I312179', '89311216'], ['04317188', '02313269', '29313233'], ['03319172', '4731B15C'], ['04311181', '0431125C'], ['SCHD', '8931224C', '9I312249'], ['QYLD', '2865']];
+  const sameKey = f => { const c = f.sibOf || f.code; const g = SAME.find(x => x.includes(c)); return g ? g[0] : c; };
   let heatSel = null; // null のときは「持っている投信のうち評価額の大きい順」
   try { const v = JSON.parse(localStorage.getItem('heatSel') || 'null'); if (Array.isArray(v)) heatSel = v; } catch(e){}
   const saveHeatSel = () => { try { heatSel ? localStorage.setItem('heatSel', JSON.stringify(heatSel)) : localStorage.removeItem('heatSel'); } catch(e){} };
@@ -646,9 +649,19 @@ details.more .note{margin-top:6px}
     // 選んだ投信の欄
     $('#heatLeg').innerHTML = cols.map((f, i) => `<span class="chip"><button class="op" data-open="${esc(f.code)}" aria-label="${esc(f.short || f.name)}の中身を見る"><b class="fn" style="background:${cc.get(f)}">${i + 1}</b><span>${esc(f.short || f.name)}</span></button><button class="x" data-hrm="${esc(f.code)}" aria-label="${esc(f.short || f.name)}を外す">×</button></span>`).join('') || '<p class="note">比べる投信を下から選んでください。</p>';
     const codes = new Set(cols.map(f => f.code));
-    const opts = pool.filter(f => !codes.has(f.code));
+    // 中身が同じ投信（兄弟コース・同じ指数）は1本にまとめて出す。持っている投信はそのまま出す
+    const hs = new Set(funds.map(f => f.code)), colG = new Set(cols.map(sameKey)), byG = new Map();
+    pool.filter(f => !codes.has(f.code)).forEach(f => { const k = sameKey(f); if (colG.has(k) && !hs.has(f.code)) return; if (!byG.has(k)) byG.set(k, []); byG.get(k).push(f); });
+    const many = new Set();
+    const opts = [...byG.values()].flatMap(g => {
+      const held = g.filter(f => hs.has(f.code)); if (held.length) return held;
+      const k = sameKey(g[0]), grp = SAME.find(x => x[0] === k) || [];
+      const rep = g.slice().sort((a, b) => (a.sibOf ? 1 : 0) - (b.sibOf ? 1 : 0) || ((grp.indexOf(a.code) + 1 || 99) - (grp.indexOf(b.code) + 1 || 99)) || (a.order || 99) - (b.order || 99))[0];
+      if (grp.length && g.some(f => !f.sibOf && f !== rep)) many.add(rep.code);
+      return [rep];
+    });
     const full = cols.length >= HEAT_MAX;
-    $('#heatAdd').innerHTML = `<option value="">${full ? `${HEAT_MAX}本まで選べます（どれかを外すと足せます）` : `比べる投信を足す（${opts.length}本から）`}</option>` + (full ? '' : groupedOptions(opts, (f, h) => (f.short || f.name) + (h ? '（保有中）' : '')));
+    $('#heatAdd').innerHTML = `<option value="">${full ? `${HEAT_MAX}本まで選べます（どれかを外すと足せます）` : `比べる投信を足す（${opts.length}本から）`}</option>` + (full ? '' : groupedOptions(opts, (f, h) => (f.short || f.name) + (h ? '（保有中）' : many.has(f.code) ? ' など' : '')));
     $('#heatAdd').disabled = full;
     $('#heatReset').hidden = !heatSel;
     if (!cols.length){ $('#heat').innerHTML = ''; $('#heatSum').textContent = ''; return; }
