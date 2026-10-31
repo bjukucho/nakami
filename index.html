@@ -542,7 +542,7 @@ details.more .note{margin-top:6px}
   function render(){
     $('#sampleNote').hidden = !(sample || !funds.length); $('#stNote').hidden = !sample;
     if (!funds.length){
-      const msg = '<div class="empty-state">「保有入力」で証券会社の保有一覧を貼り付けるか、持っている投信を選ぶと、中身がここに出ます。</div>';
+      const msg = '<div class="empty-state">上の「スクショで入れる」「CSVで入れる」「名前で選んで入れる」から投信を入れると、中身がここに出ます。</div>';
       $('#coList').innerHTML = msg; $('#plist').innerHTML = ''; $('#pie').innerHTML = ''; renderHeat(compute()); renderSources();
       ['#sumTotal','#sumTop','#sumCountry','#sumSector'].forEach(x => $(x).textContent = '—'); $('#sumCover').textContent = ''; $('#coverFill').style.width = '0';
       $('#asof').textContent = `${ALL.length}本の投信から選べます`;
