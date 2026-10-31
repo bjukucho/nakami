@@ -1013,7 +1013,7 @@ details.more .note{margin-top:6px}
     if (!best) for (const f of ALL){ const re = TICK(f); if (re && re.test(String(name || '').normalize('NFKC'))){ best = f; break; } }
     return best;
   }
-  const nnum = v => { if (v == null) return null; const s = String(v).normalize('NFKC').replace(/[,\s円口株"]/g, ''); if (!/^\d+(\.\d+)?$/.test(s)) return null; const n = Number(s); return n > 0 ? n : null; };
+  const nnum = v => { if (v == null) return null; if (/\d,\d{0,2}(?!\d)|\d,\d{4}/.test(String(v))) return null; const s = String(v).normalize('NFKC').replace(/[,\s円口株"]/g, ''); if (!/^\d+(\.\d+)?$/.test(s)) return null; const n = Number(s); return n > 0 ? n : null; };
   const LOOKS_FUND = { test: t => /インデックス|ファンド|オープン|投信|株式|ETF|戦略|コース|分配/.test(t) && !/株式会社|\(株\)|ホールディングス/.test(t) };
   // 貼り付けた文字から読み取る
   function parsePaste(raw){
@@ -1025,23 +1025,43 @@ details.more .note{margin-top:6px}
     for (const f of ALL){
       for (const k of keysOf(f)){ let i = N.indexOf(k); while (i >= 0){ hits.push({ s: i, e: i + k.length, f, a: lineAt(i), b: lineAt(i + k.length - 1) }); i = N.indexOf(k, i + 1); } }
       const re = TICK(f); if (re) lines.forEach((l, li) => { if (re.test(l)) hits.push({ s: st[li], e: st[li] + 1, f, a: li, b: li }); });
+      // 協会コード（8桁の英数字）が写っていれば、名前より確か
+      if (!isEtf(f) && /^[0-9A-Z]{8}$/.test(f.code)){ const cre = new RegExp('(^|[^0-9A-Za-z])' + f.code + '(?![0-9A-Za-z])', 'i'); lines.forEach((l, li) => { if (cre.test(l)) hits.push({ s: st[li], e: st[li] + Math.max(1, normQ(l).length), f, a: li, b: li, code: true }); }); }
     }
     hits.sort((x, y) => x.s - y.s || (y.e - y.s) - (x.e - x.s));
     const pick = []; let end = -1;
     for (const h of hits){ if (h.s >= end){ pick.push(h); end = h.e; } else if (h.s === pick[pick.length - 1]?.s && h.e > end){ pick[pick.length - 1] = h; end = h.e; } }
-    const odd = [];
-    for (let i = pick.length - 1; i >= 0; i--){ const h = pick[i]; if (badTail(h.f, N.slice(h.e, h.e + 12)) || /(\.\.\.|…)\s*$/.test(lines[h.b])){ odd.push(lines.slice(h.a, h.b + 1).join('')); pick.splice(i, 1); } }
+    const NUMLINE = /\d\s*(円|口|株)|^[¥￥]\s*\d/;
+    const oddL = [];
+    for (let i = pick.length - 1; i >= 0; i--){ const h = pick[i]; if (!h.code && (badTail(h.f, N.slice(h.e, h.e + 12)) || /(\.\.\.|…)\s*$/.test(lines[h.b]))){ oddL.push([h.a, h.b]); pick.splice(i, 1); } }
+    // 名前とコードが続けて見つかったら1件にまとめる（違うときはコードを信じる）
+    const numBetween = (p, q) => lines.slice(p.b + 1, q.a).some(l => NUMLINE.test(l));
+    for (let i = pick.length - 1; i >= 1; i--){
+      const p = pick[i - 1], q = pick[i];
+      if (numBetween(p, q)) continue;
+      if (q.code && (p.f === q.f || !p.code)){ q.a = p.a; pick.splice(i - 1, 1); }
+      else if (p.f === q.f){ p.b = q.b; pick.splice(i, 1); }
+    }
+    // コードの上にある投信名の行（読み違いで一致しなかった名前）もその投信の分にする
+    pick.forEach((h, i) => {
+      if (!h.code) return; const lim = i ? pick[i - 1].b + 1 : 0;
+      for (let k = 0; k < 3 && h.a - 1 >= lim; k++){ const l = lines[h.a - 1]; if (NUMLINE.test(l) || /評価|損益|合計|口座|一般|特定|NISA|金額指定|前日比|参考|更新/.test(l) || normQ(l).length < 4) break; h.a--; }
+    });
+    const odd = oddL.filter(([a, b]) => !pick.some(h => h.a <= b && a <= h.b)).map(([a, b]) => lines.slice(a, b + 1).join(''));
     const used = new Set(); pick.forEach(h => { for (let i = h.a; i <= h.b; i++) used.add(i); });
     // 投信名らしいのに一致しなかった行（このアプリに無い投信）。ここで区切りにもする
     const isMiss = i => !used.has(i) && LOOKS_FUND.test(lines[i]) && normQ(lines[i]).length >= 8 && !/\d\s*(円|口)|口座|合計|評価|損益|一覧|積立|NISA|特定|一般|詳細|内訳|分配金コース|受取型|再投資型/.test(lines[i]);
     const miss = lines.filter((l, i) => isMiss(i));
-    const NUMLINE = /\d\s*(円|口|株)|^[¥￥]\s*\d/;
     let items = pick.map((h, i) => {
       let to = i + 1 < pick.length ? pick[i + 1].a : lines.length;
       for (let x = h.b + 1; x < to; x++) if (isMiss(x)){ to = x; break; }
       const seg = lines.slice(h.b, Math.max(h.b + 1, to));
       return Object.assign({ f: h.f, hasNum: seg.some(l => NUMLINE.test(l)) }, readSeg(seg));
     });
+    // 「評価額 合計」の数字を、どれかの投信の金額と取り違えない
+    const totals = new Set();
+    lines.forEach((l, i) => { if (/合計|総額/.test(l)){ [l, lines[i + 1] || ''].forEach(x => (x.match(/\d{1,3}(?:,\d{3})+/g) || []).forEach(n => totals.add(nnum(n)))); } });
+    if (items.length > 1) items.forEach(it => { if (it.value != null && totals.has(it.value)) it.value = null; });
     // 数字のない投信名がある・最初の投信名より前に金額があって最後の投信の後に数字がない → 並びが読めない
     const anyNum = lines.some(l => NUMLINE.test(l));
     const before = pick.length ? lines.slice(0, pick[0].a).some(l => NUMLINE.test(l) && !/合計|総額|総資産|資産/.test(l)) : false;
@@ -1148,6 +1168,9 @@ details.more .note{margin-top:6px}
       h += res.order ? `<p class="imph">名前と金額の並びがうまく読み取れませんでした</p><p class="note">間違った数字が入らないよう、読み込みを止めました。投信を1本ずつコピーして貼り付けると読み取れます。</p>` :
         `<p class="imph">${esc(srcLabel)}から、このアプリにある投信が見つかりませんでした</p>` + (res.sawHeader === false ? '<p class="note">証券会社の保有一覧のCSVか、確かめてください。</p>' : '<p class="note">投信の名前が切れずに写っているか、確かめてください。</p>');
     }
+    const got = new Set(impRes.map(x => x.f.code));
+    const noAmt = [...new Map((res.items || []).filter(it => !got.has(it.f.code)).map(it => [it.f.code, it.f])).values()];
+    if (noAmt.length) h += `<div class="impmiss">名前は見つかりましたが、金額が読めませんでした（手で入れてください）：<ul>${noAmt.map(f => `<li>${esc(f.short || f.name)}</li>`).join('')}</ul></div>`;
     if (res.miss.length) h += `<div class="impmiss">このアプリにまだ無い投信は入れられません：<ul>${[...new Set(res.miss)].slice(0, 8).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
     $('#impOut').innerHTML = h; $('#impOut').hidden = false;
     $('#impBar').hidden = !impRes.length; updateImpBtn();
@@ -1169,17 +1192,25 @@ details.more .note{margin-top:6px}
   async function getOcr(){
     if (ocrWorker) return ocrWorker;
     if (!window.Tesseract) await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
-    ocrWorker = await window.Tesseract.createWorker('jpn+eng');
+    const mk = window.Tesseract.createWorker('jpn+eng', 1, { logger: m => { if (m && m.status && /load|init/.test(m.status) && m.progress != null && !ocrWorker) ocrSay(`読み取りの準備をしています… ${Math.round(m.progress * 100)}%`); } });
+    ocrWorker = await Promise.race([mk, new Promise((_, ng) => setTimeout(() => ng(new Error('timeout')), 90000))]);
+    try { await ocrWorker.setParameters({ tessedit_pageseg_mode: '4' }); } catch(e){}
     return ocrWorker;
   }
   // 文字認識の読み違いの癖を直す：「3.743」→「3,743」、行が金額だけで「円」が「F」などに化けたとき
   function ocrFix(t){
-    return String(t || '').normalize('NFKC').split(/\r?\n/).map(l => {
-      let x = l, y;
+    const out = [];
+    String(t || '').normalize('NFKC').split(/\r?\n/).forEach(l => {
+      let x = l.replace(/[ \t　]{2,}/g, ' '), y;   // 見出しと数字の間の長い空白を詰める
       do { y = x; x = x.replace(/(\d)\.(\d{3})(?=\D|$)/g, '$1,$2'); } while (x !== y);
-      const m = x.match(/^\s*(\d{1,3}(?:,\d{3})+)\s*(?:[A-Za-z]{1,2}|[^\d円口株%¥+\-−\s]{1,3})?\s*$/);
-      return m ? m[1] + ' 円' : x;
-    }).join('\n');
+      x = x.replace(/FANG\s*[二ユ十]/g, 'FANG+').replace(/評価客/g, '評価額');
+      // 金額だけの行で「円」が別の字に化けたとき（数字だけの行や「口」の化けは円にしない）
+      const m = x.match(/^\s*(\d{1,3}(?:,\d{3})+)\s*([A-Za-z]{1,2}|[^\d円口株%¥+\-−\s]{1,3})\s*$/);
+      const prev = out.filter(v => v.trim()).pop() || '';
+      if (m && !/^[OoDQロ口品□0]+$/.test(m[2]) && !/取得|単価|基準|損益|前日比|数量|口数|現在値|リターン/.test(prev) && !new RegExp('[+\\-−]\\s*' + m[1].replace(/,/g, ',?')).test(prev)) x = m[1] + ' 円';
+      out.push(x);
+    });
+    return out.join('\n');
   }
   function ocrSay(t){ const el = $('#ocrMsg'); el.hidden = !t; el.textContent = t || ''; }
   $('#ocrBtn').addEventListener('click', () => { if (!ocrBusy) $('#ocrFile').click(); });
