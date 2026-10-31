@@ -987,6 +987,11 @@ details.more .note{margin-top:6px}
   });
 
   // ---- 証券会社の画面やCSVから読み込む ----
+  // 文字認識が取り違えやすい字を同じ字にそろえる（照合のときだけ。両側に同じ変換をかける）
+  const fold = t => String(t).replace(/rn/g, 'm').replace(/[il1|!¦t]/g, 'l').replace(/[o0q]/g, 'o').replace(/5/g, 's').replace(/_/g, '')
+    .replace(/力/g, 'カ').replace(/[口□]/g, 'ロ').replace(/二/g, 'ニ').replace(/八/g, 'ハ').replace(/工/g, 'エ').replace(/卜/g, 'ト').replace(/夕/g, 'タ').replace(/一/g, '').replace(/分/g, '人')
+    .replace(/[ァィゥェォッャュョヮヵヶ]/g, c => ({ ァ: 'ア', ィ: 'イ', ゥ: 'ウ', ェ: 'エ', ォ: 'オ', ッ: 'ツ', ャ: 'ヤ', ュ: 'ユ', ョ: 'ヨ', ヮ: 'ワ', ヵ: 'カ', ヶ: 'ケ' })[c]);
+  const fq = t => fold(normQ(t));
   const impKeys = new Map(); // code -> 照合用の名前（正規化済み）
   let keyCnt = null;
   function keysOf(f){
@@ -996,11 +1001,11 @@ details.more .note{margin-top:6px}
   }
   function rawKeys(f){
     const n = String(f.name || '').normalize('NFKC'), k = new Set();
-    k.add(normQ(n));
-    k.add(normQ(n.replace(/\(愛称:[^)]*\)/g, '')));
+    k.add(fq(n));
+    k.add(fq(n.replace(/\(愛称:[^)]*\)/g, '')));
     const ang = n.match(/<[^>]*>/g);
-    if (ang) k.add(normQ(ang.join('') + n.replace(/<[^>]*>/g, ''))); // ＜…＞が名前の前に付く書き方
-    if (isEtf(f)){ const m = n.match(/^(.*?)\((.*)\)\s*$/); if (m){ k.add(normQ(m[1])); k.add(normQ(m[2])); } }
+    if (ang) k.add(fq(ang.join('') + n.replace(/<[^>]*>/g, ''))); // ＜…＞が名前の前に付く書き方
+    if (isEtf(f)){ const m = n.match(/^(.*?)\((.*)\)\s*$/); if (m){ k.add(fq(m[1])); k.add(fq(m[2])); } }
     return [...k].filter(x => x.length >= 6);
   }
   const TICK = f => {
@@ -1009,13 +1014,13 @@ details.more .note{margin-top:6px}
     return /^\d+$/.test(f.code) ? new RegExp('^' + c + '(?![\\d,.])(?!\\s*(?:円|口|株|%|/|:))') : new RegExp('(^|[^A-Za-z0-9,.])' + c + '(?![A-Za-z0-9,.])');
   };
   // 一致した名前のすぐ後ろに、別の型を示す言葉が続く／名前が「…」で切れている → 似た別の投信かもしれないので入れない
-  const VARIANT = /^(為替ヘッジあり|ヘッジあり|毎月|年\d回|資産成長|決算|予想分配|隔月|3ヵ月|3か月)/;
-  const badTail = (f, tail) => VARIANT.test(tail) && !normQ(f.name).includes(tail.slice(0, 4));
+  const VARIANT = new RegExp('^(' + ['為替ヘッジあり', 'ヘッジあり', '毎月', '年\\d回', '資産成長', '決算', '予想分配', '隔月', '3ヵ月', '3か月'].map(w => fq(w.replace('\\d', '#')).replace('#', '[\\dls]')).join('|') + ')');
+  const badTail = (f, tail) => VARIANT.test(tail) && !fq(f.name).includes(tail.slice(0, 4));
   // 1つの名前（CSVの銘柄名など）からいちばん長く一致する投信を探す
   function matchName(name, code){
     const t = String(code || '').normalize('NFKC').trim().toUpperCase();
     if (t){ const f = ALL.find(f => isEtf(f) && f.code.toUpperCase() === t); if (f) return f; }
-    const q = normQ(name); let best = null, bl = 0;
+    const q = fq(name); let best = null, bl = 0;
     if (/(\.\.\.|…)\s*$/.test(String(name || '').normalize('NFKC'))) return null;
     for (const f of ALL) for (const k of keysOf(f)){ const i = q.indexOf(k); if (k.length > bl && i >= 0 && !badTail(f, q.slice(i + k.length, i + k.length + 12))){ best = f; bl = k.length; } }
     if (!best) for (const f of ALL){ const re = TICK(f); if (re && re.test(String(name || '').normalize('NFKC'))){ best = f; break; } }
@@ -1025,22 +1030,59 @@ details.more .note{margin-top:6px}
   const LOOKS_FUND = { test: t => /インデックス|ファンド|オープン|投信|株式|ETF|戦略|コース|分配/.test(t) && !/株式会社|\(株\)|ホールディングス/.test(t) };
   // 貼り付けた文字から読み取る
   const IMG_SEP = '----次の写真----';
+  const NUMLINE0 = /\d\s*(円|口|株)|^[¥￥]\s*\d/;
+  const TOKEN = new RegExp(['ヘッジアリ', 'ヘッジナシ', 'ヘッジ', '毎月', '隔月', '資産成長', '年.回', 'ダブル', 'ベア', 'ブル', 'レバレッジ', '株式', '債券', 'リート', 'reit', 'バランス', 'ゴールド', 'コモディティ', '先進国', '新興国', '全世界', '全米', '米国', '日本', '国内', 'インド', '除く', '半導体', '高配当', '[2-9]+', '[a-z0-9]コス'].map(w => /^(年\.回|\[2-9\]\+|\[a-z0-9\]コス)$/.test(w) ? w : fq(w)).join('|'), 'g');
+  // k が W のどこかに、何文字の違いで入っているか（いちばん少ない違いと、その終わりの位置）
+  function approxIn(k, W){
+    let prev = new Array(W.length + 1).fill(0), cur = new Array(W.length + 1);
+    for (let i = 1; i <= k.length; i++){
+      cur[0] = i;
+      for (let j = 1; j <= W.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (k[i - 1] === W[j - 1] ? 0 : 1));
+      [prev, cur] = [cur, prev];
+    }
+    let d = Infinity, end = 0; for (let j = 0; j <= W.length; j++) if (prev[j] < d){ d = prev[j]; end = j; }
+    return { d, end };
+  }
   function parsePaste(raw){
     const lines = String(raw || '').normalize('NFKC').split(/\r?\n/).map(x => x.trim()).filter(Boolean);
     let N = ''; const st = [];
-    lines.forEach(l => { st.push(N.length); N += normQ(l); });
+    lines.forEach(l => { st.push(N.length); N += fq(l); });
     const lineAt = pos => { let i = 0; while (i + 1 < st.length && st[i + 1] <= pos) i++; return i; };
     const hits = [];
     for (const f of ALL){
       for (const k of keysOf(f)){ let i = N.indexOf(k); while (i >= 0){ hits.push({ s: i, e: i + k.length, f, a: lineAt(i), b: lineAt(i + k.length - 1) }); i = N.indexOf(k, i + 1); } }
       const re = TICK(f); if (re) lines.forEach((l, li) => { if (re.test(l)) hits.push({ s: st[li], e: st[li] + 1, f, a: li, b: li }); });
       // 協会コード（8桁の英数字）が写っていれば、名前より確か
-      if (!isEtf(f) && /^[0-9A-Z]{8}$/.test(f.code)){ const cre = new RegExp('(^|[^0-9A-Za-z])' + f.code + '(?![0-9A-Za-z])', 'i'); lines.forEach((l, li) => { if (cre.test(l)) hits.push({ s: st[li], e: st[li] + Math.max(1, normQ(l).length), f, a: li, b: li, code: true }); }); }
+      if (!isEtf(f) && /^[0-9A-Z]{8}$/.test(f.code)){ const cre = new RegExp('(^|[^0-9A-Za-z])' + f.code + '(?![0-9A-Za-z])', 'i'); lines.forEach((l, li) => { if (cre.test(l)) hits.push({ s: st[li], e: st[li] + Math.max(1, fq(l).length), f, a: li, b: li, code: true }); }); }
+    }
+    // どの投信とも一致しなかった名前らしい行は、1〜2文字の読み違いまで許して探し直す（候補が1本に決まるときだけ）
+    const cov = new Set(); hits.forEach(h => { for (let i = h.a; i <= h.b; i++) cov.add(i); });
+    const nameish = l => !NUMLINE0.test(l) && /[\u3040-\u30ff\u4e00-\u9fff]{4}|[A-Za-z]{6}/.test(l) && !/評価|損益|合計|口座|分配金コース|一覧|注文|前日比|基準価額|数量/.test(l);
+    for (let li = 0; li < lines.length; li++){
+      if (cov.has(li) || !nameish(lines[li])) continue;
+      let lj = li; while (lj + 1 < lines.length && lj - li < 2 && !cov.has(lj + 1) && nameish(lines[lj + 1])) lj++;
+      const W = N.slice(st[li], lj + 1 < st.length ? st[lj + 1] : N.length);
+      let best = null, second = Infinity;
+      for (const f of ALL){
+        let fb = null;
+        for (const k of keysOf(f)){ if (k.length < 12) continue; const r = approxIn(k, W); if (!fb || r.d < fb.d) fb = Object.assign(r, { k }); }
+        if (!fb) continue;
+        if (!best || fb.d < best.d){ if (best) second = Math.min(second, best.d); best = Object.assign(fb, { f }); } else second = Math.min(second, fb.d);
+      }
+      if (!best || best.d > (best.k.length >= 24 ? 2 : 1) || second <= best.d) continue;
+      const e = st[li] + best.end;
+      // ヘッジの有無・決算回数・数字など、別の投信を分ける言葉が食い違うときは入れない
+      const R = N.slice(Math.max(st[li], e - best.k.length - best.d), e), tk = t => (t.match(TOKEN) || []).sort().join('|');
+      if (tk(R) !== tk(best.k)) continue;
+      if (badTail(best.f, N.slice(e, e + 12))) continue;
+      hits.push({ s: st[li], e, f: best.f, a: li, b: lineAt(e - 1), fuzzy: true });
+      for (let x = li; x <= lineAt(e - 1); x++) cov.add(x);
+      li = lineAt(e - 1);
     }
     hits.sort((x, y) => x.s - y.s || (y.e - y.s) - (x.e - x.s));
     const pick = []; let end = -1;
     for (const h of hits){ if (h.s >= end){ pick.push(h); end = h.e; } else if (h.s === pick[pick.length - 1]?.s && h.e > end){ pick[pick.length - 1] = h; end = h.e; } }
-    const NUMLINE = /\d\s*(円|口|株)|^[¥￥]\s*\d/;
+    const NUMLINE = NUMLINE0;
     const oddL = [];
     for (let i = pick.length - 1; i >= 0; i--){ const h = pick[i]; if (!h.code && (badTail(h.f, N.slice(h.e, h.e + 12)) || /(\.\.\.|…)\s*$/.test(lines[h.b]))){ oddL.push([h.a, h.b]); pick.splice(i, 1); } }
     // 名前とコードが続けて見つかったら1件にまとめる（違うときはコードを信じる）
@@ -1075,7 +1117,11 @@ details.more .note{margin-top:6px}
     // 数字のない投信名がある・最初の投信名より前に金額があって最後の投信の後に数字がない → 並びが読めない
     const anyNum = lines.some(l => NUMLINE.test(l));
     const before = pick.length ? lines.slice(0, pick[0].a).some(l => NUMLINE.test(l) && !/合計|総額|総資産|資産/.test(l)) : false;
-    const order = anyNum && items.length > 0 && (items.some(it => !it.hasNum) || (before && !items[items.length - 1].hasNum));
+    // 写真のいちばん下で名前だけ写り金額が切れた投信（その写真の最後の1本）は、その1本だけ金額なしにする
+    const imgTxt = []; { let k = 0; lines.forEach(l => { if (l === IMG_SEP) k++; else imgTxt[k] = (imgTxt[k] || '') + l + '\n'; }); }
+    const cut = it => !it.hasNum && /評価/.test(imgTxt[it.img] || '') && !items.some(o => o !== it && o.img === it.img && items.indexOf(o) > items.indexOf(it));
+    const lastCut = items.length > 0 && cut(items[items.length - 1]);
+    const order = anyNum && items.length > 0 && (items.some(it => !it.hasNum && !cut(it)) || (before && lastCut));
     if (order) items = [];
     miss.push(...odd);
     return { items, miss, order };
@@ -1210,10 +1256,14 @@ details.more .note{margin-top:6px}
   // 文字認識の読み違いの癖を直す：「3.743」→「3,743」、行が金額だけで「円」が「F」などに化けたとき
   function ocrFix(t){
     const out = [];
-    String(t || '').normalize('NFKC').split(/\r?\n/).forEach(l => {
+    const src = String(t || '').normalize('NFKC').split(/\r?\n/);
+    src.forEach((l, li) => {
       let x = l.replace(/[ \t　]{2,}/g, ' '), y;   // 見出しと数字の間の長い空白を詰める
       do { y = x; x = x.replace(/(\d)\.(\d{3})(?=\D|$)/g, '$1,$2'); } while (x !== y);
       x = x.replace(/FANG\s*[二ユ十]/g, 'FANG+').replace(/評価客/g, '評価額');
+      // 投信名の行の右端にある印や矢印が、短いゴミ文字（「P」「Vv」「り」など）になって名前にくっつくのを外す
+      const nx = (src.slice(li + 1).find(v => v.trim()) || '').trim();
+      if (/[\u3040-\u30ff\u4e00-\u9fff]{4}/.test(x) && !/\d\s*(円|口|株|%)/.test(x) && !/^(コース|ース)/.test(nx)) x = x.replace(/(\S)(?:\s+(?:[A-Za-z]{1,2}|[ぁ-ゖァ-ヺ]|[|\\/<>]))+\s*$/, '$1');
       // 金額だけの行で「円」が別の字に化けたとき（数字だけの行や「口」の化けは円にしない）
       const m = x.match(/^\s*(\d{1,3}(?:,\d{3})+)\s*([A-Za-z]{1,2}|[^\d円口株%¥+\-−\s]{1,3})\s*$/);
       const prev = out.filter(v => v.trim()).pop() || '';
