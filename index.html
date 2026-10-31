@@ -1636,9 +1636,16 @@ details.more .note{margin-top:6px}
     const fy = top + k * rowH + 40;
     g.fillStyle = '#cdd2c6'; g.fillRect(64, fy, W - 128, 2);
     g.fillStyle = '#151714'; g.font = `800 38px ${F}`; g.fillText('投信中身マップ', 64, fy + 70);
-    g.fillStyle = '#4f544c'; g.font = `600 28px ${F}`; g.fillText('bjukucho.github.io/nakami', 64, fy + 116);
-    g.fillStyle = '#1f6b45'; g.font = `800 40px ${F}`; g.textAlign = 'right'; g.fillText('@besuko_', W - 64, fy + 70);
-    g.fillStyle = '#868b82'; g.font = `600 24px ${F}`; g.fillText('プロデュース by ベス子', W - 64, fy + 114); g.textAlign = 'left';
+    g.fillStyle = '#868b82'; g.font = `600 24px ${F}`; g.fillText('プロデュース by ベス子', 64, fy + 112);
+    g.fillStyle = '#1f6b45'; g.font = `800 44px ${F}`; g.textAlign = 'right'; g.fillText('@besuko_', W - 64, fy + 74);
+    g.fillStyle = '#4f544c'; g.font = `600 24px ${F}`; g.fillText('アプリはプロフィールから', W - 64, fy + 112); g.textAlign = 'left';
+    // 切り取っても消えないよう、題の横と、画像全体に薄く斜めのアカウント名を入れる
+    g.fillStyle = '#1f6b45'; g.font = `800 30px ${F}`; g.textAlign = 'right'; g.fillText('@besuko_', W - 64, 56); g.textAlign = 'left';
+    g.save(); g.globalAlpha = 0.07; g.fillStyle = '#151714'; g.font = `800 34px ${F}`; g.textAlign = 'center';
+    for (let yy = 140, row = 0; yy < H + 200; yy += 190, row++){
+      for (let xx = (row % 2 ? 130 : 330); xx < W + 200; xx += 400){ g.save(); g.translate(xx, yy); g.rotate(-0.42); g.fillText('@besuko_', 0, 0); g.restore(); }
+    }
+    g.restore();
     return cv;
   }
   function renderPic(){
