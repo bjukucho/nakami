@@ -1,4 +1,4 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><title>投信中身マップ</title><meta name="description" content="持っている投資信託・ETFの中身（構成銘柄）を合算して、どの会社にいくら投資しているかがひと目で分かります。"><meta property="og:type" content="website"><meta property="og:url" content="https://bjukucho.github.io/nakami/"><meta property="og:title" content="投信中身マップ"><meta property="og:description" content="持っている投資信託・ETFの中身（構成銘柄）を合算して、どの会社にいくら投資しているかがひと目で分かります。"><meta property="og:image" content="https://bjukucho.github.io/nakami/ogp.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="投信中身マップ"><meta name="twitter:description" content="持っている投資信託・ETFの中身（構成銘柄）を合算して、どの会社にいくら投資しているかがひと目で分かります。"><meta name="twitter:image" content="https://bjukucho.github.io/nakami/ogp.png"><link rel="icon" href="favicon.png" sizes="48x48" type="image/png"><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="besuko"></head><body>
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><title>投信中身マップ</title><meta name="description" content="持っている投資信託・ETFの中身（構成銘柄）を合算して、どの会社にいくら投資しているかがひと目で分かります。"><meta property="og:type" content="website"><meta property="og:url" content="https://bjukucho.github.io/nakami/"><meta property="og:title" content="投信中身マップ"><meta property="og:description" content="持っている投資信託・ETFの中身（構成銘柄）を合算して、どの会社にいくら投資しているかがひと目で分かります。"><meta property="og:image" content="https://bjukucho.github.io/nakami/ogp.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="投信中身マップ"><meta name="twitter:description" content="持っている投資信託・ETFの中身（構成銘柄）を合算して、どの会社にいくら投資しているかがひと目で分かります。"><meta name="twitter:image" content="https://bjukucho.github.io/nakami/ogp.png"><link rel="icon" href="favicon.png" sizes="48x48" type="image/png"><link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-title" content="besuko"><meta name="theme-color" content="#1f6b45"></head><body>
 <title>投信中身マップ</title>
 <style>
 /* Layout: one narrow column — summary → tabs → (company ranking | overlap grid | holdings input | sources) */
@@ -120,6 +120,14 @@ table.heat{border-collapse:collapse;width:100%;table-layout:fixed;font-size:10.5
 a{color:var(--accent)}
 .start{margin:0;background:var(--accent-wash);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
 .start .cta{margin:0}
+.a2hs{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line-2);border-radius:14px;padding:10px 8px 10px 10px}
+.a2hs .ai{flex:none;width:40px;height:40px;border-radius:10px;background:#1f6b45;color:#fff;font-weight:800;font-size:10.5px;letter-spacing:-.3px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+.a2hs .ai i{display:block;width:26px;height:3px;border-radius:2px;background:linear-gradient(90deg,#e0703f 0 42%,#2f6fd0 42% 75%,#3aa676 75%)}
+.a2hs .at{flex:1;min-width:0;font-size:13px;line-height:1.45}
+.a2hs .at b{display:block;font-size:13.5px}
+.a2hs .at span{color:var(--ink-2)}
+.a2hs .ab{flex:none;font:inherit;font-size:13px;font-weight:700;padding:8px 10px;border:0;border-radius:10px;background:var(--accent);color:#fff;cursor:pointer}
+.a2hs .ax{flex:none;font:inherit;font-size:18px;line-height:1;width:32px;height:32px;border:0;background:transparent;color:var(--muted);cursor:pointer}
 .st-h{margin:0;font-size:17px;font-weight:800;color:var(--accent)}
 .st-s{margin:0;font-size:13px;color:var(--ink-2)}
 .st-n{margin:0;font-size:12px;color:var(--muted);text-align:center}
@@ -275,6 +283,13 @@ details.more .note{margin-top:6px}
     <p class="sub" id="asof">月次レポートを読み込んでいます</p>
   </header>
 
+  <div class="a2hs" id="a2hs" hidden>
+    <div class="ai" aria-hidden="true">besuko<i></i></div>
+    <div class="at"><b>ホーム画面に追加すると、すぐ開けます</b><span id="a2hsHow"></span></div>
+    <button class="ab" id="a2hsBtn" hidden>追加</button>
+    <button class="ax" id="a2hsX" aria-label="閉じる">×</button>
+  </div>
+
   <div class="start" id="sampleNote" hidden>
     <p class="st-h">あなたの投信の中身を見てみましょう</p>
     <p class="st-s">証券会社の保有一覧から、まとめて入れられます</p>
@@ -394,6 +409,32 @@ details.more .note{margin-top:6px}
   <div class="sheet-body" id="sheetBody"></div>
 </div>
 
+<script>
+(function(){
+  const box = document.getElementById('a2hs'); if (!box) return;
+  const K = 'a2hs';
+  let inFrame = true; try { inFrame = window.self !== window.top; } catch(e){}
+  const ua = navigator.userAgent;
+  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const android = /Android/.test(ua);
+  const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  let off = false; try { off = localStorage.getItem(K) === '1'; } catch(e){}
+  const hide = () => { box.hidden = true; try { localStorage.setItem(K, '1'); } catch(e){} };
+  document.getElementById('a2hsX').onclick = hide;
+  window.addEventListener('appinstalled', hide);
+  if (inFrame || standalone || off || !(ios || android)) return;
+  const how = document.getElementById('a2hsHow'), btn = document.getElementById('a2hsBtn');
+  how.textContent = ios ? '共有ボタン →「ホーム画面に追加」→「Webアプリとして開く」をオフにして追加' : '右上の「⋮」→「ホーム画面に追加」';
+  box.hidden = false;
+  if (android && !document.querySelector('link[rel=manifest]')) { const l = document.createElement('link'); l.rel = 'manifest'; l.href = 'manifest.webmanifest'; document.head.appendChild(l); }
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    how.textContent = '「追加」を押すとアイコンができます';
+    btn.hidden = false;
+    btn.onclick = async () => { btn.hidden = true; e.prompt(); try { const r = await e.userChoice; if (r && r.outcome === 'accepted') hide(); } catch(_){} };
+  });
+})();
+</script>
 <script>
 (function(){
   const SAMPLE = [["0331418A",1500000],["03311187",1000000],["04311181",500000]];
