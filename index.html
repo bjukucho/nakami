@@ -148,6 +148,10 @@ a{color:var(--accent)}
 .pie-center .t2{font-size:20px;font-weight:700;fill:var(--ink)}
 .pie-center .t3{font-size:13px;fill:var(--ink-2)}
 .pieopts{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;width:100%}
+.wm{font-size:11px;color:var(--muted);opacity:.75;letter-spacing:.03em;font-weight:600;pointer-events:none;user-select:none}
+.wm-co{text-align:right;margin:-6px 4px -6px 0}
+.piewrap{position:relative;width:100%;max-width:320px}
+.piewrap .wm{position:absolute;right:0;bottom:-4px}
 .chk{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-2);cursor:pointer}
 .chk input{width:18px;height:18px;accent-color:var(--accent)}
 .plist{width:100%;display:flex;flex-direction:column}
@@ -280,6 +284,7 @@ details.more .note{margin-top:6px}
       <div class="legend" id="legend"></div>
       <div class="seg" role="group" aria-label="表示"><button id="mYen" aria-pressed="true">金額</button><button id="mPct" aria-pressed="false">割合</button></div>
     </div>
+    <div class="wm wm-co" aria-hidden="true">@besuko_</div>
     <div class="list" id="coList"></div>
     <p class="note">会社名を押すと、どの投信からいくら持っているかが出ます。各投信の上位10銘柄は最新の月次レポート、11位以下は直近の運用報告書の数字です。</p>
   </section>
@@ -290,7 +295,7 @@ details.more .note{margin-top:6px}
         <div class="seg" role="group" aria-label="分け方"><button id="gCo" aria-pressed="true">会社</button><button id="gCountry" aria-pressed="false">国</button><button id="gSector" aria-pressed="false">業種</button></div>
         <label class="chk"><input type="checkbox" id="incUnseen">見えない部分も入れる</label>
       </div>
-      <svg id="pie" viewBox="0 0 320 320" role="img" aria-label="保有の内訳の円グラフ"></svg>
+      <div class="piewrap"><svg id="pie" viewBox="0 0 320 320" role="img" aria-label="保有の内訳の円グラフ"></svg><span class="wm" aria-hidden="true">@besuko_</span></div>
       <div class="plist" id="plist"></div>
     </div>
     <p class="note">円や一覧を押すと、その会社の金額と割合が真ん中に出ます。もう一度押すと全体に戻ります。「見えない部分も入れる」を外すと、見えている会社だけで100%になります。円には上位30社までを描き、それより小さい会社は「その他の会社」にまとめています。一覧には全社が出ます。</p>
