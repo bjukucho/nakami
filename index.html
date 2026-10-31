@@ -355,6 +355,7 @@ details.more .note{margin-top:6px}
       <div class="piewrap"><svg id="pie" viewBox="0 0 320 320" role="img" aria-label="保有の内訳の円グラフ"></svg><span class="wm" aria-hidden="true">@besuko_</span></div>
       <div class="plist" id="plist"></div>
     </div>
+    <button class="ghost picopen" id="picOpenPie" aria-haspopup="dialog" hidden>このグラフを画像にする</button>
     <p class="note">円や一覧を押すと、その会社の金額が真ん中に出ます。</p>
   </section>
 
@@ -365,6 +366,7 @@ details.more .note{margin-top:6px}
       <div class="addrow"><button class="cta" id="heatAdd" aria-haspopup="dialog">比べる投信を選ぶ</button><button class="rm" id="heatReset" hidden>持っている投信に戻す</button></div></div>
     <div class="heatwrap"><table class="heat" id="heat"></table></div>
     <p class="heatsum num" id="heatSum"></p>
+    <button class="ghost picopen" id="picOpenHeat" aria-haspopup="dialog" hidden>この比較を画像にする</button>
   </section>
 
   <section class="panel" id="p-sim" hidden>
@@ -426,10 +428,10 @@ details.more .note{margin-top:6px}
 <div class="sheet-bg" id="picBg" hidden></div>
 <div class="sheet" id="pic" role="dialog" aria-modal="true" aria-labelledby="picTitle" hidden>
   <div class="sheet-head">
-    <div class="sheet-top"><h2 id="picTitle">上位の会社を画像にする</h2><button class="sheet-x" id="picX" aria-label="閉じる">×</button></div>
-    <div class="seg" role="group" aria-label="社数"><button data-pn="10" aria-pressed="true">10社</button><button data-pn="20" aria-pressed="false">20社</button><button data-pn="30" aria-pressed="false">30社</button></div>
-    <div class="seg" role="group" aria-label="金額"><button data-pm="0" aria-pressed="true">金額を載せない</button><button data-pm="1" aria-pressed="false">金額を載せる</button></div>
-    <div class="seg" role="group" aria-label="内訳"><button data-pb="1" aria-pressed="true">内訳を載せる</button><button data-pb="0" aria-pressed="false">内訳を載せない</button></div>
+    <div class="sheet-top"><h2 id="picTitle">画像にする</h2><button class="sheet-x" id="picX" aria-label="閉じる">×</button></div>
+    <div class="seg" role="group" aria-label="社数"><button data-pn="10" aria-pressed="true">10社</button><button data-pn="20" aria-pressed="false">20社</button><button data-pn="30" aria-pressed="false" id="picN30">30社</button></div>
+    <div class="seg" role="group" aria-label="金額" id="picSegM"><button data-pm="0" aria-pressed="true">金額を載せない</button><button data-pm="1" aria-pressed="false">金額を載せる</button></div>
+    <div class="seg" role="group" aria-label="内訳" id="picSegB"><button data-pb="1" aria-pressed="true">内訳を載せる</button><button data-pb="0" aria-pressed="false">内訳を載せない</button></div>
   </div>
   <div class="sheet-body pic-body">
     <p class="note" id="picNote"></p>
@@ -557,7 +559,7 @@ details.more .note{margin-top:6px}
   // ---- 描画 ----
   function render(){
     $('#sampleNote').hidden = !(sample || !funds.length); $('#stNote').hidden = !sample;
-    $('#picOpen').hidden = !(funds.length && compute().total > 0);
+    $('#picOpen').hidden = $('#picOpenPie').hidden = !(funds.length && compute().total > 0);
     if (!funds.length){
       const msg = '<div class="empty-state">上の「スクショで入れる」「CSVで入れる」「名前で選んで入れる」から投信を入れると、中身がここに出ます。</div>';
       $('#coList').innerHTML = msg; $('#plist').innerHTML = ''; $('#pie').innerHTML = ''; renderHeat(compute()); renderSources();
@@ -691,6 +693,7 @@ details.more .note{margin-top:6px}
     $('#heatLeg').innerHTML = cols.map((f, i) => `<span class="chip"><button class="op" data-open="${esc(f.code)}" aria-label="${esc(f.short || f.name)}の中身を見る"><b class="fn" style="background:${cc.get(f)}">${i + 1}</b><span>${esc(f.short || f.name)}</span></button><button class="x" data-hrm="${esc(f.code)}" aria-label="${esc(f.short || f.name)}を外す">×</button></span>`).join('') || '<p class="note">下の「投信を選ぶ」から選んでください。</p>';
     $('#heatAdd').textContent = `投信を選ぶ（${cols.length}/${HEAT_MAX}本）`;
     $('#heatReset').hidden = !heatSel;
+    $('#picOpenHeat').hidden = !cols.length;
     if (!cols.length){ $('#heat').innerHTML = ''; $('#heatSum').textContent = ''; return; }
     // 選んだ投信を同じ金額ずつ持ったときの平均で、多い順に20社
     const n = cols.length, agg = new Map();
@@ -1561,7 +1564,109 @@ details.more .note{margin-top:6px}
     $('#sheetBody').innerHTML = h;
   }
   // ---- 上位の会社を画像にする（Xなどに貼る用。金額は入れず、割合だけ） ----
-  let picN = 10, picMoney = false, picUrl = null, picFile = null, picReturn = null, picTok = 0, picBlob = null, picDl = null, picBreak = true;
+  let picN = 10, picMoney = false, picUrl = null, picFile = null, picReturn = null, picTok = 0, picBlob = null, picDl = null, picBreak = true, picKind = 'co';
+  // 画像の下の帯・右上のアカウント名・全体の薄い透かし（どの画像も同じ）
+  function picDeco(g, W, H, fy, F){
+    g.fillStyle = '#cdd2c6'; g.fillRect(64, fy, W - 128, 2);
+    g.fillStyle = '#151714'; g.font = `800 38px ${F}`; g.fillText('投信中身マップ', 64, fy + 70);
+    g.fillStyle = '#868b82'; g.font = `600 24px ${F}`; g.fillText('プロデュース by ベス子', 64, fy + 112);
+    g.fillStyle = '#1f6b45'; g.font = `800 44px ${F}`; g.textAlign = 'right'; g.fillText('@besuko_', W - 64, fy + 74);
+    g.fillStyle = '#4f544c'; g.font = `600 24px ${F}`; g.fillText('アプリはプロフィールから', W - 64, fy + 112); g.textAlign = 'left';
+    // 切り取っても消えないよう、題の横と、画像全体に薄く斜めのアカウント名を入れる
+    g.fillStyle = '#1f6b45'; g.font = `800 30px ${F}`; g.textAlign = 'right'; g.fillText('@besuko_', W - 64, 56); g.textAlign = 'left';
+    g.save(); g.globalAlpha = 0.07; g.fillStyle = '#151714'; g.font = `800 34px ${F}`; g.textAlign = 'center';
+    for (let yy = 140, row = 0; yy < H + 200; yy += 190, row++){
+      for (let xx = (row % 2 ? 130 : 330); xx < W + 200; xx += 400){ g.save(); g.translate(xx, yy); g.rotate(-0.42); g.fillText('@besuko_', 0, 0); g.restore(); }
+    }
+    g.restore();
+  }
+  const PIC_HEX = { '--s1':'#2a78d6','--s2':'#eb6834','--s3':'#1baf7a','--s4':'#eda100','--s5':'#e87ba4','--s6':'#008300','--s7':'#6250d6','--s8':'#e34948','--s9':'#9a6324','--s10':'#0f8ea6','--pie-a':'#8f978a','--pie-b':'#b4bbae','--pie-rest':'#dfe3da','--unseen':'#c9cdc3' };
+  const picHex = c => { const m = String(c).match(/var\((--[\w-]+)\)/); return m ? (PIC_HEX[m[1]] || '#8f978a') : c; };
+  const PIC_F = '"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif';
+  function picBase(W, H, title, sub, note){
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cv.getContext('2d'), F = PIC_F;
+    g.fillStyle = '#f6f7f4'; g.fillRect(0, 0, W, H);
+    g.fillStyle = '#1f6b45'; g.fillRect(0, 0, W, 14);
+    g.textBaseline = 'alphabetic'; g.textAlign = 'left';
+    g.fillStyle = '#151714'; g.font = `800 62px ${F}`; g.fillText(title, 64, 124);
+    g.fillStyle = '#4f544c'; g.font = `600 32px ${F}`; g.fillText(sub, 64, 186);
+    g.fillStyle = '#868b82'; g.font = `500 26px ${F}`; g.fillText(note, 64, 232);
+    const fit = (t, w) => { t = String(t); if (g.measureText(t).width <= w) return t; while (t.length > 1 && g.measureText(t + '…').width > w) t = t.slice(0, -1); return t + '…'; };
+    return { cv, g, F, fit };
+  }
+  // グラフ（会社・国・業種の円）の画像：アプリのグラフと同じ分け方・同じ色
+  function drawPie(n){
+    const r = compute(), items = pieItems(r), sum = items.reduce((s, i) => s + i.amt, 0) || 1;
+    const rows = []; items.forEach(it => { if (it.key === '__rest') it.rest.forEach(e => rows.push({ name: e.name, amt: e.total, color: picHex(it.color) })); else rows.push({ name: it.name, amt: it.amt, color: picHex(it.color) }); });
+    const list = rows.slice(0, n), k = list.length, more = rows.length - k;
+    const W = 1080, R = 300, r0 = 186, cy0 = 300 + R, rowH = n <= 10 ? 70 : n <= 20 ? 58 : 50, top = 300 + 2 * R + 60, H = top + k * rowH + (more > 0 ? 60 : 0) + 190;
+    const GN = { co: '会社', country: '国', sector: '業種' }[pieGroup];
+    const dates = funds.map(f => f.asOf).filter(Boolean).sort();
+    const { cv, g, F, fit } = picBase(W, H, `${sample ? '見本：' : '私の'}投信の中身 ${GN}別`, `${funds.length}本の投信の中身を合算${dates.length ? '・' + fmtMonth(dates[0]) + '時点' : ''}`,
+      picMoney ? `${pieUnseen ? '評価額の合計' : '中身が分かっている分'} ${yen(sum)}・％はこの合計に対する割合` : `％は、${pieUnseen ? '持っている投信の評価額の合計' : '中身が分かっている分の合計'}に対する割合`);
+    let a = -Math.PI / 2;
+    items.forEach(it => { const da = it.amt / sum * Math.PI * 2; g.beginPath(); g.arc(W / 2, cy0, R, a, a + da); g.arc(W / 2, cy0, r0, a + da, a, true); g.closePath(); g.fillStyle = picHex(it.color); g.fill(); g.strokeStyle = '#f6f7f4'; g.lineWidth = 2; g.stroke(); a += da; });
+    g.textAlign = 'center'; g.fillStyle = '#868b82'; g.font = `600 30px ${F}`; g.fillText(`${GN}の数`, W / 2, cy0 - 18);
+    g.fillStyle = '#151714'; g.font = `800 64px ${F}`; g.fillText(`${pieGroup === 'co' ? r.list.length + '社' : items.filter(i => i.key !== '__unseen').length + (pieGroup === 'country' ? 'か国' : '業種')}`, W / 2, cy0 + 50); g.textAlign = 'left';
+    const fs = n <= 10 ? 34 : n <= 20 ? 30 : 27, right = W - 64;
+    list.forEach((e, i) => {
+      const y = top + i * rowH, ys = y + rowH * 0.64, p = e.amt / sum * 100;
+      if (i % 2 === 0){ g.fillStyle = '#ffffff'; g.fillRect(40, y, W - 80, rowH); }
+      g.fillStyle = e.color; g.fillRect(72, y + rowH / 2 - 12, 24, 24);
+      g.font = `700 ${fs}px ${F}`; const pt = p.toFixed(2) + '%'; let pw = g.measureText(pt).width;
+      g.textAlign = 'right'; g.fillStyle = '#151714'; g.fillText(pt, right, ys);
+      if (picMoney){ g.font = `600 ${Math.round(fs * 0.86)}px ${F}`; g.fillStyle = '#4f544c'; const yt = yen(e.amt); g.fillText(yt, right - pw - 22, ys); pw += 22 + g.measureText(yt).width; g.font = `700 ${fs}px ${F}`; }
+      g.textAlign = 'left'; g.fillStyle = '#151714'; g.fillText(fit(e.name, right - 120 - pw - 24), 120, ys);
+    });
+    if (more > 0){ g.fillStyle = '#868b82'; g.font = `600 26px ${F}`; g.fillText(`ほか${more}${pieGroup === 'co' ? '社' : pieGroup === 'country' ? 'か国' : '業種'}`, 120, top + k * rowH + 42); }
+    picDeco(g, W, H, top + k * rowH + (more > 0 ? 60 : 0) + 40, F);
+    return cv;
+  }
+  // 投信を比べる表の画像：アプリの表と同じ計算（選んだ投信を同じ金額ずつ持ったときの平均で多い順）
+  function drawHeat(n){
+    const cols = heatCols(compute()), m = cols.length;
+    const usedIdx = new Set(cols.map(f => funds.indexOf(f)).filter(i => i >= 0 && i < SLOTS.length));
+    const spare = SLOTS.filter((_, i) => !usedIdx.has(i));
+    const cc = new Map(cols.map(f => { const i = funds.indexOf(f); return [f, picHex(i >= 0 && i < SLOTS.length ? `var(${SLOTS[i]})` : `var(${spare.shift() || '--pie-a'})`)]; }));
+    const agg = new Map();
+    const Wt = cols.map(f => { const mm = {}; eff(f).forEach(x => { mm[x.key] = (mm[x.key] || 0) + (x.weight || 0); if (!agg.has(x.key)) agg.set(x.key, { key: x.key, name: x.label || x.nameEn || x.name, avg: 0 }); agg.get(x.key).avg += (x.weight || 0) / m; }); return mm; });
+    const rows = [...agg.values()].sort((a, b) => b.avg - a.avg).slice(0, Math.min(n, 20)), k = rows.length;
+    const maxW = Math.max(1, ...rows.flatMap(c => Wt.map(mm => mm[c.key] || 0)));
+    const W = 1080, mg = document.createElement('canvas').getContext('2d'); mg.font = `600 28px ${PIC_F}`;
+    const legRows = Math.ceil(m / 2), legH = legRows * 46 + 24;
+    const rowH = k <= 10 ? 74 : 60, headH = 70, top = 270 + legH, H = top + headH + k * rowH + 190;
+    const { cv, g, F, fit } = picBase(W, H, `投信の中身くらべ 上位${k}社`, `${m}本の投信を並べて比較${sample ? '（見本）' : ''}`, 'マスは、その投信の中での割合（%）・右端は選んだ投信の平均');
+    cols.forEach((f, i) => {
+      const x = 64 + (i % 2) * 476, y = 262 + Math.floor(i / 2) * 46;
+      g.fillStyle = cc.get(f); g.beginPath(); g.arc(x + 15, y + 15, 15, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#ffffff'; g.font = `800 18px ${F}`; g.textAlign = 'center'; g.fillText(String(i + 1), x + 15, y + 21); g.textAlign = 'left';
+      g.fillStyle = '#4f544c'; g.font = `600 26px ${F}`; g.fillText(fit(f.short || f.name, 420), x + 40, y + 25);
+    });
+    const nameW = 300, totW = 150, cellW = (W - 80 - nameW - totW) / m, x0 = 40 + nameW, cs = m <= 6 ? 28 : m <= 8 ? 24 : 21;
+    g.fillStyle = '#ffffff'; g.fillRect(40, top, W - 80, headH + k * rowH);
+    g.fillStyle = '#4f544c'; g.font = `700 26px ${F}`; g.fillText('会社', 60, top + 46);
+    cols.forEach((f, i) => { const cx = x0 + cellW * i + cellW / 2; g.fillStyle = cc.get(f); g.beginPath(); g.arc(cx, top + 36, 18, 0, Math.PI * 2); g.fill(); g.fillStyle = '#ffffff'; g.font = `800 20px ${F}`; g.textAlign = 'center'; g.fillText(String(i + 1), cx, top + 43); g.textAlign = 'left'; });
+    g.fillStyle = '#e3efe7'; g.fillRect(W - 40 - totW, top, totW, headH + k * rowH);
+    g.fillStyle = '#1f6b45'; g.font = `800 24px ${F}`; g.textAlign = 'center'; g.fillText('選んだ平均', W - 40 - totW / 2, top + 46); g.textAlign = 'left';
+    rows.forEach((c, i) => {
+      const y = top + headH + i * rowH, ys = y + rowH * 0.62;
+      g.fillStyle = '#e2e5dd'; g.fillRect(40, y, W - 80, 1);
+      g.fillStyle = '#868b82'; g.font = `700 22px ${F}`; g.fillText(String(i + 1), 56, ys);
+      g.fillStyle = '#151714'; g.font = `700 ${k <= 10 ? 28 : 25}px ${F}`; g.fillText(fit(c.name, nameW - 60), 90, ys);
+      Wt.forEach((mm, j) => {
+        const w = mm[c.key], cx = x0 + cellW * j;
+        g.textAlign = 'center';
+        if (!w){ g.fillStyle = '#cdd2c6'; g.font = `400 ${cs}px ${F}`; g.fillText('·', cx + cellW / 2, ys); g.textAlign = 'left'; return; }
+        const al = 0.12 + 0.88 * Math.min(1, w / maxW);
+        g.fillStyle = `rgba(42,120,214,${al.toFixed(2)})`; g.fillRect(cx + 1, y + 1, cellW - 2, rowH - 2);
+        g.fillStyle = al > 0.55 ? '#ffffff' : '#151714'; g.font = `700 ${cs}px ${F}`; g.fillText(w.toFixed(1), cx + cellW / 2, ys); g.textAlign = 'left';
+      });
+      g.fillStyle = '#151714'; g.font = `800 ${k <= 10 ? 28 : 25}px ${F}`; g.textAlign = 'center'; g.fillText(c.avg.toFixed(2) + '%', W - 40 - totW / 2, ys); g.textAlign = 'left';
+    });
+    picDeco(g, W, H, top + headH + k * rowH + 40, F);
+    return cv;
+  }
   function drawPic(n){
     const r = compute(), list = r.list.slice(0, n), k = list.length, B = picBreak;
     const W = 1080, F = '"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif';
@@ -1633,19 +1738,7 @@ details.more .note{margin-top:6px}
         tx += 16 + g.measureText(label).width + 24; shown++;
       }
     });
-    const fy = top + k * rowH + 40;
-    g.fillStyle = '#cdd2c6'; g.fillRect(64, fy, W - 128, 2);
-    g.fillStyle = '#151714'; g.font = `800 38px ${F}`; g.fillText('投信中身マップ', 64, fy + 70);
-    g.fillStyle = '#868b82'; g.font = `600 24px ${F}`; g.fillText('プロデュース by ベス子', 64, fy + 112);
-    g.fillStyle = '#1f6b45'; g.font = `800 44px ${F}`; g.textAlign = 'right'; g.fillText('@besuko_', W - 64, fy + 74);
-    g.fillStyle = '#4f544c'; g.font = `600 24px ${F}`; g.fillText('アプリはプロフィールから', W - 64, fy + 112); g.textAlign = 'left';
-    // 切り取っても消えないよう、題の横と、画像全体に薄く斜めのアカウント名を入れる
-    g.fillStyle = '#1f6b45'; g.font = `800 30px ${F}`; g.textAlign = 'right'; g.fillText('@besuko_', W - 64, 56); g.textAlign = 'left';
-    g.save(); g.globalAlpha = 0.07; g.fillStyle = '#151714'; g.font = `800 34px ${F}`; g.textAlign = 'center';
-    for (let yy = 140, row = 0; yy < H + 200; yy += 190, row++){
-      for (let xx = (row % 2 ? 130 : 330); xx < W + 200; xx += 400){ g.save(); g.translate(xx, yy); g.rotate(-0.42); g.fillText('@besuko_', 0, 0); g.restore(); }
-    }
-    g.restore();
+    picDeco(g, W, H, top + k * rowH + 40, F);
     return cv;
   }
   function renderPic(){
@@ -1655,20 +1748,28 @@ details.more .note{margin-top:6px}
     $('#picMsg').hidden = true;
     $('#picHow').textContent = (picDl ? '「画像を保存する」を押すと保存できます。' : '画像を長押し（パソコンは右クリック）すると保存できます。') + (picMoney ? '金額も写るので、人に見せるときは気をつけてください。' : '金額は写らず、割合だけが入ります。');
     $('#picNote').textContent = sample ? 'いまは見本の数字です。自分の投信を入れると、自分の中身の画像になります。' : '';
-    const k = Math.min(picN, compute().list.length), cv = drawPic(picN), tok = ++picTok;
-    $('#picImg').alt = `投信の中身 上位${k}社の画像`;
+    const KT = { co: '上位の会社を画像にする', pie: 'このグラフを画像にする', heat: 'この比較を画像にする' };
+    $('#picTitle').textContent = KT[picKind];
+    $('#picSegB').hidden = picKind !== 'co'; $('#picSegM').hidden = picKind === 'heat';
+    $('#picN30').hidden = picKind === 'heat';
+    const nEff = picKind === 'heat' ? Math.min(picN, 20) : picN;  // 比べる表は20社まで（選んだ社数そのものは変えない）
+    document.querySelectorAll('#pic [data-pn]').forEach(b => { b.textContent = b.dataset.pn + (picKind === 'pie' && pieGroup !== 'co' ? '件' : '社'); b.setAttribute('aria-pressed', +b.dataset.pn === nEff); });
+    const cv = picKind === 'pie' ? drawPie(nEff) : picKind === 'heat' ? drawHeat(nEff) : drawPic(nEff), tok = ++picTok;
+    $('#picImg').alt = picKind === 'co' ? `投信の中身 上位${Math.min(nEff, compute().list.length)}社の画像` : KT[picKind].replace('を画像にする', 'の画像');
+    if (picKind === 'heat') $('#picHow').textContent = (picDl ? '「画像を保存する」を押すと保存できます。' : '画像を長押し（パソコンは右クリック）すると保存できます。');
     cv.toBlob(b => {
       if (!b || tok !== picTok) return;
       picBlob = b;
       if (picUrl) URL.revokeObjectURL(picUrl);
       picUrl = URL.createObjectURL(b); $('#picImg').src = picUrl;
       picFile = null; let ok = false;
-      try { const f = new File([b], `nakami-top${picN}.png`, { type: 'image/png' }); ok = !!(navigator.canShare && navigator.canShare({ files: [f] })); if (ok) picFile = f; } catch(e){}
+      try { const f = new File([b], `nakami-${picKind === 'co' ? 'top' + picN : picKind === 'pie' ? pieGroup : 'compare'}.png`, { type: 'image/png' }); ok = !!(navigator.canShare && navigator.canShare({ files: [f] })); if (ok) picFile = f; } catch(e){}
       $('#picShare').hidden = !ok;
     }, 'image/png');
   }
-  function openPic(){
-    if (!funds.length || !(compute().total > 0)) return;
+  function openPic(kind){
+    picKind = kind === 'pie' || kind === 'heat' ? kind : 'co';
+    if (picKind === 'heat' ? !heatCols(compute()).length : (!funds.length || !(compute().total > 0))) return;
     picMoney = false;
     picReturn = document.activeElement;
     $('#picBg').hidden = false; $('#pic').hidden = false; document.body.style.overflow = 'hidden';
@@ -1678,7 +1779,9 @@ details.more .note{margin-top:6px}
     $('#picBg').hidden = true; $('#pic').hidden = true; document.body.style.overflow = '';
     if (picReturn && document.contains(picReturn)) picReturn.focus({ preventScroll: true });
   }
-  $('#picOpen').addEventListener('click', openPic);
+  $('#picOpen').addEventListener('click', () => openPic('co'));
+  $('#picOpenPie').addEventListener('click', () => openPic('pie'));
+  $('#picOpenHeat').addEventListener('click', () => openPic('heat'));
   $('#picX').addEventListener('click', closePic);
   $('#picBg').addEventListener('click', closePic);
   document.querySelectorAll('#pic [data-pn]').forEach(b => b.addEventListener('click', () => { picN = +b.dataset.pn; renderPic(); }));
