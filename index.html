@@ -33,6 +33,10 @@ h1{font-size:20px;margin:0;letter-spacing:.02em;text-wrap:balance}
 .num{font-variant-numeric:tabular-nums}
 .summary{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
 .summary .big{grid-column:1/-1}
+.tops{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.tops .lbl{font-size:11px;letter-spacing:0}
+.tv{font-size:14px;font-weight:700;line-height:1.35;margin-top:3px;overflow-wrap:anywhere}
+.tv .num{display:block;font-size:13px;color:var(--ink-2);font-weight:600}
 .lbl{font-size:12px;color:var(--muted);letter-spacing:.04em}
 .val{font-size:17px;font-weight:650}
 .big .val{font-size:28px;letter-spacing:.01em}
@@ -267,7 +271,7 @@ details.more .note{margin-top:6px}
 
   <section class="summary" aria-label="まとめ">
     <div class="big"><div class="lbl">投信の評価額 合計</div><div class="val num" id="sumTotal">—</div></div>
-    <div style="grid-column:1/-1"><div class="lbl">いちばん多い会社</div><div class="val" id="sumTop" style="font-size:15px">—</div></div>
+    <div class="tops"><div><div class="lbl">いちばん多い会社</div><div class="tv" id="sumTop">—</div></div><div><div class="lbl">いちばん多い国</div><div class="tv" id="sumCountry">—</div></div><div><div class="lbl">いちばん多い業種</div><div class="tv" id="sumSector">—</div></div></div>
     <div style="grid-column:1/-1"><div class="lbl">中身が見えている割合 <span class="num" id="sumCover"></span></div><div class="coverbar"><i id="coverFill" style="width:0"></i></div></div>
   </section>
 
@@ -455,7 +459,7 @@ details.more .note{margin-top:6px}
     if (!funds.length){
       const msg = '<div class="empty-state">「保有入力」で証券会社の保有一覧を貼り付けるか、持っている投信を選ぶと、中身がここに出ます。</div>';
       $('#coList').innerHTML = msg; $('#plist').innerHTML = ''; $('#pie').innerHTML = ''; renderHeat(compute()); renderSources();
-      ['#sumTotal','#sumTop'].forEach(x => $(x).textContent = '—'); $('#sumCover').textContent = ''; $('#coverFill').style.width = '0';
+      ['#sumTotal','#sumTop','#sumCountry','#sumSector'].forEach(x => $(x).textContent = '—'); $('#sumCover').textContent = ''; $('#coverFill').style.width = '0';
       $('#asof').textContent = `${ALL.length}本の投信から選べます`;
       renderSim(); renderInputs({ fv: {}, total: 0 });
       return;
@@ -464,8 +468,7 @@ details.more .note{margin-top:6px}
     const dates = funds.map(f => f.asOf).filter(Boolean).sort();
     $('#asof').textContent = dates.length ? `月次レポート基準日 ${fmtDate(dates[0])}${dates[0] !== dates[dates.length-1] ? '〜' + fmtDate(dates[dates.length-1]) : ''}・${funds.length}本` : '';
     $('#sumTotal').textContent = yen(r.total);
-    const top = r.list[0];
-    $('#sumTop').textContent = top ? `${top.name} ${pct(top.total / r.total * 100)}` : '—';
+    setTops(r);
     const cover = r.total ? Math.min(100, r.seen / r.total * 100) : 0;
     $('#sumCover').textContent = pct(cover);
     $('#coverFill').style.width = Math.min(100, cover) + '%';
@@ -864,11 +867,17 @@ details.more .note{margin-top:6px}
     inp.value = fmtIn(inp.value);
     setTimeout(() => { if (!$('#inList').contains(document.activeElement)) render(); }, 0);
   });
+  // いちばん多い会社・国・業種（全体の評価額に対する割合）
+  function setTops(r){
+    const most = field => { const m = new Map(); r.list.forEach(e => { const k = e[field] || ''; if (k) m.set(k, (m.get(k) || 0) + e.total); }); let b = null; m.forEach((v, k) => { if (!b || v > b[1]) b = [k, v]; }); return b; };
+    const put = (id, b) => { $(id).innerHTML = b && r.total ? `${esc(b[0])}<span class="num">${pct(b[1] / r.total * 100)}</span>` : '—'; };
+    const top = r.list[0];
+    put('#sumTop', top ? [top.name, top.total] : null); put('#sumCountry', most('country')); put('#sumSector', most('sector'));
+  }
   function renderSummaryOnly(){
     const r = compute();
     $('#sumTotal').textContent = yen(r.total);
-    const top = r.list[0];
-    $('#sumTop').textContent = top ? `${top.name} ${pct(top.total / r.total * 100)}` : '—';
+    setTops(r);
     const cover = r.total ? Math.min(100, r.seen / r.total * 100) : 0;
     $('#sumCover').textContent = pct(cover); $('#coverFill').style.width = Math.min(100, cover) + '%';
   }
