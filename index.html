@@ -433,7 +433,8 @@ details.more .note{margin-top:6px}
   <div class="sheet-body pic-body">
     <p class="note" id="picNote"></p>
     <img id="picImg" class="pic-img" alt="">
-    <div class="pickbar"><button class="cta" id="picShare" hidden>画像を共有する</button></div>
+    <div class="pickbar"><button class="cta" id="picSave" hidden>画像を保存する</button><button class="cta" id="picShare" hidden>画像を共有する</button></div>
+    <p class="note" id="picMsg" hidden></p>
     <p class="note" id="picHow"></p>
   </div>
 </div>
@@ -1559,7 +1560,7 @@ details.more .note{margin-top:6px}
     $('#sheetBody').innerHTML = h;
   }
   // ---- 上位の会社を画像にする（Xなどに貼る用。金額は入れず、割合だけ） ----
-  let picN = 10, picMoney = false, picUrl = null, picFile = null, picReturn = null, picTok = 0;
+  let picN = 10, picMoney = false, picUrl = null, picFile = null, picReturn = null, picTok = 0, picBlob = null, picDl = null;
   function drawPic(n){
     const r = compute(), list = r.list.slice(0, n), k = list.length;
     const W = 1080, rowH = n <= 10 ? 88 : n <= 20 ? 66 : 54, top = 290, foot = 190, H = top + k * rowH + foot;
@@ -1598,12 +1599,14 @@ details.more .note{margin-top:6px}
   function renderPic(){
     document.querySelectorAll('#pic [data-pn]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.pn === picN));
     document.querySelectorAll('#pic [data-pm]').forEach(b => b.setAttribute('aria-pressed', (b.dataset.pm === '1') === picMoney));
-    $('#picHow').textContent = '画像を長押し（パソコンは右クリック）すると保存できます。' + (picMoney ? '金額も写るので、人に見せるときは気をつけてください。' : '金額は写らず、割合だけが入ります。');
+    $('#picMsg').hidden = true;
+    $('#picHow').textContent = (picDl ? '「画像を保存する」を押すと保存できます。' : '画像を長押し（パソコンは右クリック）すると保存できます。') + (picMoney ? '金額も写るので、人に見せるときは気をつけてください。' : '金額は写らず、割合だけが入ります。');
     $('#picNote').textContent = sample ? 'いまは見本の数字です。自分の投信を入れると、自分の中身の画像になります。' : '';
     const k = Math.min(picN, compute().list.length), cv = drawPic(picN), tok = ++picTok;
     $('#picImg').alt = `投信の中身 上位${k}社の画像`;
     cv.toBlob(b => {
       if (!b || tok !== picTok) return;
+      picBlob = b;
       if (picUrl) URL.revokeObjectURL(picUrl);
       picUrl = URL.createObjectURL(b); $('#picImg').src = picUrl;
       picFile = null; let ok = false;
