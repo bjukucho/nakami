@@ -429,6 +429,7 @@ details.more .note{margin-top:6px}
     <div class="sheet-top"><h2 id="picTitle">上位の会社を画像にする</h2><button class="sheet-x" id="picX" aria-label="閉じる">×</button></div>
     <div class="seg" role="group" aria-label="社数"><button data-pn="10" aria-pressed="true">10社</button><button data-pn="20" aria-pressed="false">20社</button><button data-pn="30" aria-pressed="false">30社</button></div>
     <div class="seg" role="group" aria-label="金額"><button data-pm="0" aria-pressed="true">金額を載せない</button><button data-pm="1" aria-pressed="false">金額を載せる</button></div>
+    <div class="seg" role="group" aria-label="内訳"><button data-pb="1" aria-pressed="true">内訳を載せる</button><button data-pb="0" aria-pressed="false">内訳を載せない</button></div>
   </div>
   <div class="sheet-body pic-body">
     <p class="note" id="picNote"></p>
@@ -1560,12 +1561,28 @@ details.more .note{margin-top:6px}
     $('#sheetBody').innerHTML = h;
   }
   // ---- 上位の会社を画像にする（Xなどに貼る用。金額は入れず、割合だけ） ----
-  let picN = 10, picMoney = false, picUrl = null, picFile = null, picReturn = null, picTok = 0, picBlob = null, picDl = null;
+  let picN = 10, picMoney = false, picUrl = null, picFile = null, picReturn = null, picTok = 0, picBlob = null, picDl = null, picBreak = true;
   function drawPic(n){
-    const r = compute(), list = r.list.slice(0, n), k = list.length;
-    const W = 1080, rowH = n <= 10 ? 88 : n <= 20 ? 66 : 54, top = 290, foot = 190, H = top + k * rowH + foot;
+    const r = compute(), list = r.list.slice(0, n), k = list.length, B = picBreak;
+    const W = 1080, F = '"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif';
+    // 投信の色はアプリの画面と同じ順（持っている投信の並び順）
+    const PAL = ['#2a78d6','#eb6834','#1baf7a','#eda100','#e87ba4','#008300','#6250d6','#e34948','#9a6324','#0f8ea6'];
+    const colOf = f => { const i = funds.indexOf(f); return i >= 0 && i < PAL.length ? PAL[i] : '#8f978a'; };
+    const partsOf = e => { const m = new Map(); e.parts.forEach(p => m.set(p.fund, (m.get(p.fund) || 0) + p.amt)); return [...m].map(([f, amt]) => ({ f, amt })).sort((a, b) => b.amt - a.amt); };
+    // 内訳を載せるときは、上に投信の色の見本を並べる（何行になるかを先に測る）
+    const mg = document.createElement('canvas').getContext('2d'); mg.font = `600 26px ${F}`;
+    const leg = []; let legH = 0;
+    if (B){
+      const used = funds.filter(f => list.some(e => e.parts.some(p => p.fund === f)));
+      let x = 64, y = 0;
+      const mfit = (t, w) => { t = String(t); if (mg.measureText(t).width <= w) return t; while (t.length > 1 && mg.measureText(t + '…').width > w) t = t.slice(0, -1); return t + '…'; };
+      used.forEach(f => { const t = mfit(f.short || f.name, W - 128 - 30), w = 30 + mg.measureText(t).width; if (x + w > W - 64 && x > 64){ x = 64; y += 44; } leg.push({ f, t, x, y }); x += w + 28; });
+      legH = used.length ? y + 44 + 30 : 0;
+    }
+    const rowH = B ? (n <= 10 ? 132 : n <= 20 ? 112 : 96) : (n <= 10 ? 88 : n <= 20 ? 66 : 54);
+    const top = 290 + legH, foot = 190, H = top + k * rowH + foot;
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-    const g = cv.getContext('2d'), F = '"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif';
+    const g = cv.getContext('2d');
     const fit = (t, w) => { t = String(t); if (g.measureText(t).width <= w) return t; while (t.length > 1 && g.measureText(t + '…').width > w) t = t.slice(0, -1); return t + '…'; };
     g.fillStyle = '#f6f7f4'; g.fillRect(0, 0, W, H);
     g.fillStyle = '#1f6b45'; g.fillRect(0, 0, W, 14);
@@ -1574,19 +1591,47 @@ details.more .note{margin-top:6px}
     const dates = funds.map(f => f.asOf).filter(Boolean).sort();
     g.fillStyle = '#4f544c'; g.font = `600 32px ${F}`; g.fillText(`${funds.length}本の投信の中身を合算${dates.length ? '・' + fmtMonth(dates[0]) + '時点' : ''}`, 64, 186);
     g.fillStyle = '#868b82'; g.font = `500 26px ${F}`; g.fillText(picMoney ? `評価額の合計 ${yen(r.total)}・％はこの合計に対する割合` : '％は、持っている投信の評価額の合計に対する割合', 64, 232);
+    if (B){
+      g.font = `600 26px ${F}`;
+      leg.forEach(o => { g.fillStyle = colOf(o.f); g.fillRect(o.x, 266 + o.y, 20, 20); g.fillStyle = '#4f544c'; g.fillText(o.t, o.x + 30, 285 + o.y); });
+    }
     const maxP = k ? list[0].total / r.total * 100 : 1, nameX = 150, right = W - 64, barW = right - nameX;
-    const fs = Math.round(rowH * (n <= 10 ? 0.4 : 0.44));
+    const fs = B ? (n <= 10 ? 38 : n <= 20 ? 34 : 30) : Math.round(rowH * (n <= 10 ? 0.4 : 0.44));
     list.forEach((e, i) => {
       const y = top + i * rowH, p = e.total / r.total * 100;
       if (i % 2 === 0){ g.fillStyle = '#ffffff'; g.fillRect(40, y, W - 80, rowH); }
-      g.fillStyle = i < 3 ? '#1f6b45' : '#868b82'; g.font = `800 ${fs}px ${F}`; g.textAlign = 'right'; g.fillText(String(i + 1), nameX - 28, y + rowH * 0.58); g.textAlign = 'left';
+      const ys = y + rowH * (B ? 0.36 : 0.58);
+      g.fillStyle = i < 3 ? '#1f6b45' : '#868b82'; g.font = `800 ${fs}px ${F}`; g.textAlign = 'right'; g.fillText(String(i + 1), nameX - 28, ys); g.textAlign = 'left';
       g.font = `700 ${fs}px ${F}`; const pt = p.toFixed(2) + '%'; let pw = g.measureText(pt).width;
-      const ys = y + rowH * 0.58;
       g.textAlign = 'right'; g.fillStyle = '#151714'; g.fillText(pt, right, ys);
       if (picMoney){ g.font = `600 ${Math.round(fs * 0.86)}px ${F}`; g.fillStyle = '#4f544c'; const yt = yen(e.total); g.fillText(yt, right - pw - 22, ys); pw += 22 + g.measureText(yt).width; g.font = `700 ${fs}px ${F}`; }
       g.textAlign = 'left'; g.fillStyle = '#151714'; g.fillText(fit(e.name, barW - pw - 24), nameX, ys);
-      g.fillStyle = '#e2e5dd'; g.fillRect(nameX, y + rowH * 0.74, barW, 6);
-      g.fillStyle = i < 3 ? '#1f6b45' : '#5fa57d'; g.fillRect(nameX, y + rowH * 0.74, Math.max(4, barW * p / maxP), 6);
+      if (!B){
+        g.fillStyle = '#e2e5dd'; g.fillRect(nameX, y + rowH * 0.74, barW, 6);
+        g.fillStyle = i < 3 ? '#1f6b45' : '#5fa57d'; g.fillRect(nameX, y + rowH * 0.74, Math.max(4, barW * p / maxP), 6);
+        return;
+      }
+      // 棒を投信ごとの色で積み上げ、その下にどの投信から何％かを書く
+      const ps = partsOf(e), by = y + rowH * 0.47, bh = n <= 10 ? 14 : 12;
+      g.fillStyle = '#e2e5dd'; g.fillRect(nameX, by, barW, bh);
+      let bx = nameX;
+      ps.forEach(o => { const w = barW * (o.amt / r.total * 100) / maxP; g.fillStyle = colOf(o.f); g.fillRect(bx, by, Math.max(1, w), bh); bx += w; });
+      const ty = y + rowH * 0.84, tf = n <= 10 ? 25 : n <= 20 ? 23 : 21;
+      g.font = `600 ${tf}px ${F}`;
+      let tx = nameX, shown = 0;
+      for (const o of ps){
+        const pctT = ` ${(o.amt / r.total * 100).toFixed(2)}%`, nm = o.f.short || o.f.name;
+        const left = ps.length - shown - 1, reserve = left > 0 ? 24 + g.measureText(`ほか${left}本`).width : 0;
+        const avail = right - tx - 16 - reserve;
+        let label = nm + pctT;
+        if (g.measureText(label).width > avail){
+          if (shown > 0){ g.fillStyle = '#868b82'; g.fillText(`ほか${ps.length - shown}本`, tx, ty); shown = -1; break; }
+          label = fit(nm, Math.max(40, avail - g.measureText(pctT).width)) + pctT;  // 名前だけ縮めて％は残す
+        }
+        g.fillStyle = colOf(o.f); g.fillRect(tx, ty - tf * 0.72, 10, tf * 0.72);
+        g.fillStyle = '#4f544c'; g.fillText(label, tx + 16, ty);
+        tx += 16 + g.measureText(label).width + 24; shown++;
+      }
     });
     const fy = top + k * rowH + 40;
     g.fillStyle = '#cdd2c6'; g.fillRect(64, fy, W - 128, 2);
@@ -1599,6 +1644,7 @@ details.more .note{margin-top:6px}
   function renderPic(){
     document.querySelectorAll('#pic [data-pn]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.pn === picN));
     document.querySelectorAll('#pic [data-pm]').forEach(b => b.setAttribute('aria-pressed', (b.dataset.pm === '1') === picMoney));
+    document.querySelectorAll('#pic [data-pb]').forEach(b => b.setAttribute('aria-pressed', (b.dataset.pb === '1') === picBreak));
     $('#picMsg').hidden = true;
     $('#picHow').textContent = (picDl ? '「画像を保存する」を押すと保存できます。' : '画像を長押し（パソコンは右クリック）すると保存できます。') + (picMoney ? '金額も写るので、人に見せるときは気をつけてください。' : '金額は写らず、割合だけが入ります。');
     $('#picNote').textContent = sample ? 'いまは見本の数字です。自分の投信を入れると、自分の中身の画像になります。' : '';
@@ -1630,6 +1676,7 @@ details.more .note{margin-top:6px}
   $('#picBg').addEventListener('click', closePic);
   document.querySelectorAll('#pic [data-pn]').forEach(b => b.addEventListener('click', () => { picN = +b.dataset.pn; renderPic(); }));
   document.querySelectorAll('#pic [data-pm]').forEach(b => b.addEventListener('click', () => { picMoney = b.dataset.pm === '1'; renderPic(); }));
+  document.querySelectorAll('#pic [data-pb]').forEach(b => b.addEventListener('click', () => { picBreak = b.dataset.pb === '1'; renderPic(); }));
   $('#picShare').addEventListener('click', async () => { if (!picFile) return; try { await navigator.share({ files: [picFile], text: '私の投信の中身 @besuko_ #投信中身マップ' }); } catch(e){} });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#pic').hidden) closePic(); });
   $('#sheetX').addEventListener('click', closeSheet);
