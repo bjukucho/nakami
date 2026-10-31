@@ -562,7 +562,7 @@ details.more .note{margin-top:6px}
     $('#legend').innerHTML = funds.map(f => `<button class="lg" data-open="${esc(f.code)}" aria-label="${esc(f.short || f.name)}の中身を見る"><i class="dot" style="background:${color(f)}"></i>${esc(f.short || f.name)}</button>`).join('');
 
     // 会社別
-    const maxAmt = top ? top.total : 1;
+    const maxAmt = r.list.length ? r.list[0].total : 1;
     let html = r.list.slice(0, coLimit).map((e,i) => {
       const share = e.total / r.total * 100;
       const segs = e.parts.map(p => `<i style="width:${(p.amt / maxAmt * 100).toFixed(3)}%;background:${color(p.fund)}" title="${esc(p.fund.short)} ${yen(p.amt)}"></i>`).join('');
