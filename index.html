@@ -35,7 +35,6 @@ h1{font-size:20px;margin:0;letter-spacing:.02em;text-wrap:balance}
 .lbl{font-size:12px;color:var(--muted);letter-spacing:.04em}
 .val{font-size:17px;font-weight:650}
 .big .val{font-size:28px;letter-spacing:.01em}
-.pl.up{color:var(--up)} .pl.down{color:var(--down)}
 .coverbar{height:8px;border-radius:4px;background:var(--unseen);overflow:hidden;margin-top:6px}
 .coverbar i{display:block;height:100%;background:var(--accent);border-radius:4px}
 .tabs{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
@@ -106,9 +105,8 @@ table.heat{border-collapse:collapse;width:100%;table-layout:fixed;font-size:10.5
 .fields input{font:inherit;font-size:16px;padding:8px 10px;border:1px solid var(--line-2);border-radius:9px;background:var(--bg);color:var(--ink);width:100%;font-variant-numeric:tabular-nums}
 .fields .full{grid-column:1/-1}
 .calc{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;flex-wrap:wrap;border-top:1px dashed var(--line-2);padding-top:10px}
-.calc b{font-weight:650}
-.modes{font-size:12.5px}
-.saved{font-size:12px;color:var(--accent);min-height:1em}
+.saved{font-size:12px;color:var(--accent)}
+.saved:empty{display:none}
 .src{display:flex;flex-direction:column;gap:4px;font-size:13px}
 .src .k{color:var(--muted)}
 a{color:var(--accent)}
@@ -185,7 +183,6 @@ details.more summary{cursor:pointer;color:var(--accent);font-size:13.5px;font-we
 details.more summary::-webkit-details-marker{display:none}
 details.more summary::before{content:'＋ '}
 details.more[open] summary::before{content:'－ '}
-details.more .fields{margin-top:8px}
 details.more .note{margin-top:6px}
 .legend button.lg{all:unset;display:inline-flex;align-items:center;gap:5px;cursor:pointer}
 .legend button.lg:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
@@ -259,9 +256,8 @@ details.more .note{margin-top:6px}
   <div class="sample" id="sampleNote" hidden>いま出ているのは見本の数字です。自分の投信を入れると、自分の中身に切り替わります。<button class="cta" id="goInput">自分の投信を入れる</button></div>
 
   <section class="summary" aria-label="まとめ">
-    <div class="big"><div class="lbl">投信の評価額 合計（参考値）</div><div class="val num" id="sumTotal">—</div></div>
-    <div><div class="lbl">損益</div><div class="val num pl" id="sumPL">—</div></div>
-    <div><div class="lbl">いちばん多い会社</div><div class="val" id="sumTop" style="font-size:15px">—</div></div>
+    <div class="big"><div class="lbl">投信の評価額 合計</div><div class="val num" id="sumTotal">—</div></div>
+    <div style="grid-column:1/-1"><div class="lbl">いちばん多い会社</div><div class="val" id="sumTop" style="font-size:15px">—</div></div>
     <div style="grid-column:1/-1"><div class="lbl">中身が見えている割合 <span class="num" id="sumCover"></span></div><div class="coverbar"><i id="coverFill" style="width:0"></i></div></div>
   </section>
 
@@ -334,10 +330,10 @@ details.more .note{margin-top:6px}
       </div>
       <button class="ghost" id="impOpen" aria-expanded="false" aria-controls="impBox">証券会社の画面やCSVから読み込む</button>
       <div class="pickbox" id="impBox" hidden>
-        <p class="note">証券会社の保有一覧の文字を貼り付けるか、保有一覧のCSVファイルを選ぶと、持っている投信と口数・金額を読み取ります。読み取りはこのスマホの中だけで行います。</p>
+        <p class="note">証券会社の保有一覧の文字を貼り付けるか、保有一覧のCSVファイルを選ぶと、持っている投信と金額を読み取ります。読み取りはこのスマホの中だけで行います。</p>
         <details class="more imphow"><summary>スクショから文字をコピーする方法（iPhone）</summary>
           <ol class="impsteps"><li>証券会社のアプリやサイトで、保有一覧の画面をスクショする</li><li>写真アプリでそのスクショを開き、文字を長押しして「すべてを選択」→「コピー」</li><li>下の枠を長押しして「ペースト」</li></ol>
-          <p class="note">証券会社のサイトなら、画面の文字をそのまま選んでコピーしても読み取れます。何枚かに分かれるときは、続けて貼り付けてかまいません。投信の行を開いて口数・平均取得価額も写っていると、損益まで出ます。</p>
+          <p class="note">証券会社のサイトなら、画面の文字をそのまま選んでコピーしても読み取れます。何枚かに分かれるときは、続けて貼り付けてかまいません。</p>
         </details>
         <textarea id="impText" rows="5" placeholder="ここに貼り付け" aria-label="保有一覧の文字"></textarea>
         <div class="pickbar"><button class="cta" id="impRead">読み取る</button><button class="rm" id="impFileBtn">CSVを選ぶ</button><input type="file" id="impFile" accept=".csv,text/csv,text/plain,text/comma-separated-values" hidden></div>
@@ -406,41 +402,30 @@ details.more .note{margin-top:6px}
   const isJpy = f => f.currency === 'JPY';
   const priceOf = f => isJpy(f) ? f.priceJpy : f.priceUsd;
   const fmtPrice = (f, v) => v == null ? '—' : (isJpy(f) ? Number(v).toLocaleString('ja-JP', { maximumFractionDigits: 1 }) + '円' : usd(v));
-  function fxOf(f){ if (isJpy(f)) return 1; const p = positions[f.code] || {}; return numOrNull(p.fxOverride) ?? f.fxUsdJpy ?? null; }
-  // 計算に使う基準価額（株価）：手で入れた値 → 読み込んだ値（アプリの月次データより新しい間だけ） → 月次データ
-  function navOf(f){
-    const p = positions[f.code] || {}, e = isEtf(f);
-    const m = numOrNull(p.navOverride);
-    if (m != null) return { nav: m, at: null, src: 'manual' };
-    if (!e && p.navImp && numOrNull(p.navImp.v) && String(p.navImp.at || '') > String(f.asOf || '')) return { nav: +p.navImp.v, at: p.navImp.at, src: 'imp' };
-    return { nav: e ? priceOf(f) : f.nav, at: e ? (f.priceAsOf || f.asOf) : f.asOf, src: 'rep' };
+  // 保有は金額だけで持つ。前の版で口数・取得価額を入れていた人は、その時点の金額に直して残す
+  function oldValue(f, p){
+    const u = numOrNull(p.units); if (!u) return numOrNull(p.value) || 0;
+    if (isEtf(f)){ const pr = numOrNull(p.navOverride) ?? priceOf(f), fx = isJpy(f) ? 1 : (numOrNull(p.fxOverride) ?? f.fxUsdJpy); return pr && fx ? u * pr * fx : (numOrNull(p.value) || 0); }
+    const nav = numOrNull(p.navOverride) ?? (p.navImp && numOrNull(p.navImp.v) && String(p.navImp.at || '') > String(f.asOf || '') ? +p.navImp.v : f.nav);
+    return nav ? u * nav / 10000 : (numOrNull(p.value) || 0);
   }
-  const fmtMD = s => { const m = String(s || '').match(/\d{4}-(\d{2})-(\d{2})/); return m ? `${+m[1]}月${+m[2]}日` : ''; };
-  const navTxt = (f, n) => n.nav == null ? '—' : (isEtf(f) ? fmtPrice(f, n.nav) : Number(n.nav).toLocaleString('ja-JP', { maximumFractionDigits: 2 }) + '円');
-  const navWhen = n => fmtMD(n.at) + (n.src === 'imp' ? '読み込み' : '');
-  function navNote(f){ const n = navOf(f); return n.src === 'manual' ? '入力した値' : `参考値・${navWhen(n)} ${navTxt(f, n)}`; }
+  function valueOnly(){
+    for (const c of Object.keys(positions)){
+      const p = positions[c] || {}, f = ALL.find(x => x.code === c);
+      if (p.units == null && p.avgCost == null && p.navOverride == null && p.fxOverride == null && p.navImp == null) continue;
+      const v = f ? oldValue(f, p) : numOrNull(p.value);
+      positions[c] = v ? { code: c, value: Math.round(v) } : { code: c };
+    }
+  }
   function fundValue(f){
     const p = positions[f.code] || {};
-    const e = isEtf(f);
-    const nav = navOf(f).nav;
-    const units = numOrNull(p.units);
-    if (e){ const fx = fxOf(f); if (units && nav && fx) return { value: units * nav * fx, nav, units, src: 'units' }; }
-    else if (units && nav) return { value: units * nav / 10000, nav, units, src: 'units' };
-    return { value: numOrNull(p.value) || 0, nav, units, src: 'value' };
-  }
-  function fundCost(f){
-    const p = positions[f.code] || {}; const units = numOrNull(p.units), avg = numOrNull(p.avgCost);
-    if (!(units && avg)) return null;
-    if (isEtf(f)){ const fx = fxOf(f); return fx ? units * avg * fx : null; }
-    return units * avg / 10000;
+    return { value: numOrNull(p.value) || 0 };
   }
   function compute(){
-    const byKey = new Map(); let total = 0, seen = 0, cost = 0, costCovered = 0, costKnown = true;
+    const byKey = new Map(); let total = 0, seen = 0;
     const fv = {};
     for (const f of funds){
       const v = fundValue(f); fv[f.code] = v; total += v.value;
-      const c = fundCost(f);
-      if (v.value > 0){ if (c == null) costKnown = false; else { cost += c; costCovered += v.value; } }
       for (const h of eff(f)){
         const amt = v.value * (h.weight || 0) / 100; if (!amt) continue; seen += amt;
         const k = h.key || h.nameEn || h.name;
@@ -450,16 +435,16 @@ details.more .note{margin-top:6px}
     }
     const list = [...byKey.values()].sort((a,b) => b.total - a.total);
     list.forEach(e => e.parts.sort((a,b) => a.fund.order - b.fund.order));
-    return { list, total, seen, fv, cost, costCovered, costKnown };
+    return { list, total, seen, fv };
   }
 
   // ---- 描画 ----
   function render(){
     $('#sampleNote').hidden = !sample;
     if (!funds.length){
-      const msg = '<div class="empty-state">「保有入力」で持っている投信を選ぶと、中身がここに出ます。</div>';
+      const msg = '<div class="empty-state">「保有入力」で証券会社の保有一覧を貼り付けるか、持っている投信を選ぶと、中身がここに出ます。</div>';
       $('#coList').innerHTML = msg; $('#plist').innerHTML = ''; $('#pie').innerHTML = ''; renderHeat(compute()); renderSources();
-      ['#sumTotal','#sumPL','#sumTop'].forEach(x => $(x).textContent = '—'); $('#sumCover').textContent = ''; $('#coverFill').style.width = '0';
+      ['#sumTotal','#sumTop'].forEach(x => $(x).textContent = '—'); $('#sumCover').textContent = ''; $('#coverFill').style.width = '0';
       $('#asof').textContent = `${ALL.length}本の投信から選べます`;
       renderSim(); renderInputs({ fv: {}, total: 0 });
       return;
@@ -468,12 +453,6 @@ details.more .note{margin-top:6px}
     const dates = funds.map(f => f.asOf).filter(Boolean).sort();
     $('#asof').textContent = dates.length ? `月次レポート基準日 ${fmtDate(dates[0])}${dates[0] !== dates[dates.length-1] ? '〜' + fmtDate(dates[dates.length-1]) : ''}・${funds.length}本` : '';
     $('#sumTotal').textContent = yen(r.total);
-    const pl = $('#sumPL');
-    if (r.costCovered > 0){
-      const d = r.costCovered - r.cost; const rate = d / r.cost * 100;
-      pl.innerHTML = esc((d >= 0 ? '+' : '−') + man(Math.abs(d)) + `（${d>=0?'+':''}${rate.toFixed(1)}%）`) + (r.costKnown ? '' : '<span class="lbl" style="display:block;font-weight:400">取得価額を入れた投信の分</span>');
-      pl.className = 'val num pl ' + (d >= 0 ? 'up' : 'down'); pl.style.fontSize = '';
-    } else { pl.textContent = '平均取得価額の入力で表示'; pl.className = 'val pl'; pl.style.fontSize = '13px'; }
     const top = r.list[0];
     $('#sumTop').textContent = top ? `${top.name} ${pct(top.total / r.total * 100)}` : '—';
     const cover = r.total ? Math.min(100, r.seen / r.total * 100) : 0;
@@ -635,7 +614,6 @@ details.more .note{margin-top:6px}
     const opts = ALL.filter(f => !sel.includes(f.code));
     $('#addFund').innerHTML = '<option value="">選んでください（' + opts.length + '本）</option>' + groupedOptions(opts);
   }
-  const openDet = new Set();
   function renderInputs(r){
     renderPicker();
     const box = $('#inList');
@@ -643,26 +621,11 @@ details.more .note{margin-top:6px}
     if (active) { updateCalcs(r); return; } // 入力中は入力欄を作り直さない
     box.innerHTML = funds.map((f, idx) => {
       const p = positions[f.code] || {};
-      const e = isEtf(f);
-      const detOpen = openDet.has(f.code) || numOrNull(p.units) != null || numOrNull(p.avgCost) != null;
-      const byUnits = numOrNull(p.units) != null;
       return `<div class="card" data-code="${esc(f.code)}">
         <h3><i class="dot" style="background:${color(f)}"></i><button class="fname ttl" data-open="${esc(f.code)}" aria-label="${esc(f.name)}の中身を見る"><b>${esc(f.short || f.name)}</b><small>${esc(f.name)}</small></button><div class="acts"><button class="mv" data-mv="up" data-code="${esc(f.code)}" aria-label="上へ動かす"${idx === 0 ? ' disabled' : ''}>↑</button><button class="mv" data-mv="down" data-code="${esc(f.code)}" aria-label="下へ動かす"${idx === funds.length - 1 ? ' disabled' : ''}>↓</button><button class="rm" data-rm="${esc(f.code)}">外す</button></div></h3>
         <div class="fields">
-          <label class="full">いま持っている金額（円）<input id="v-${esc(f.code)}" data-f="value" inputmode="numeric" placeholder="例 1,000,000" value="${esc(byUnits ? fmtIn(Math.round(fundValue(f).value)) : fmtIn(p.value))}"${byUnits ? ' readonly aria-describedby="h-' + esc(f.code) + '"' : ''}></label>
+          <label class="full">いま持っている金額（円）<input id="v-${esc(f.code)}" data-f="value" inputmode="numeric" placeholder="例 1,000,000" value="${esc(fmtIn(p.value))}"></label>
         </div>
-        ${byUnits ? `<p class="note" id="h-${esc(f.code)}">${e ? (isJpy(f) ? '株数×株価' : '株数×株価×ドル円') : '口数×基準価額'}で計算した金額です。金額を直接入れたいときは、下の${e ? '株数' : '口数'}を消してください。</p>` : ''}
-        <details class="more" data-code="${esc(f.code)}"${detOpen ? ' open' : ''}><summary>損益も見る（${e ? '株数・取得単価' : '口数・取得価額'}を入れる）</summary>
-        <div class="fields">
-          ${e ? `<label>株数<input id="u-${esc(f.code)}" data-f="units" inputmode="decimal" placeholder="例 100" value="${esc(fmtIn(p.units))}"></label>
-          <label>平均取得単価（${isJpy(f) ? '円' : 'ドル'}）<input id="a-${esc(f.code)}" data-f="avgCost" inputmode="decimal" placeholder="${isJpy(f) ? '例 1,200' : '例 45.20'}" value="${esc(fmtIn(p.avgCost))}"></label>
-          <label${isJpy(f) ? ' class="full"' : ''}>株価（空なら参考値 ${fmtPrice(f, priceOf(f))}）<input id="n-${esc(f.code)}" data-f="navOverride" inputmode="decimal" placeholder="${priceOf(f) != null ? (isJpy(f) ? priceOf(f) : Number(priceOf(f)).toFixed(2)) : ''}" value="${esc(fmtIn(p.navOverride))}"></label>
-          ${isJpy(f) ? '' : `<label>ドル円（空なら ${f.fxUsdJpy ? f.fxUsdJpy + '円' : '—'}）<input id="x-${esc(f.code)}" data-f="fxOverride" inputmode="decimal" placeholder="${f.fxUsdJpy || ''}" value="${esc(fmtIn(p.fxOverride))}"></label>`}` : `<label>口数<input id="u-${esc(f.code)}" data-f="units" inputmode="numeric" placeholder="例 1,234,567" value="${esc(fmtIn(p.units))}"></label>
-          <label>平均取得価額（1万口あたり円）<input id="a-${esc(f.code)}" data-f="avgCost" inputmode="decimal" placeholder="例 25,000" value="${esc(fmtIn(p.avgCost))}"></label>
-          <label class="full">基準価額（空なら参考値 ${(n => navTxt(f, n) + '・' + navWhen(n))(navOf(f).src === 'manual' ? { nav: f.nav, at: f.asOf } : navOf(f))}）<input id="n-${esc(f.code)}" data-f="navOverride" inputmode="decimal" placeholder="${f.nav ? Number(f.nav).toLocaleString('ja-JP') : ''}" value="${esc(fmtIn(p.navOverride))}"></label>`}
-        </div>
-        <p class="note">口数・株数と取得価額は、証券会社の保有一覧に出ています。</p>
-        </details>
         <div class="calc" id="c-${esc(f.code)}"></div>
         <div class="saved" id="s-${esc(f.code)}"></div>
       </div>`;
@@ -672,11 +635,9 @@ details.more .note{margin-top:6px}
   function updateCalcs(r){
     for (const f of funds){
       const el = document.getElementById('c-' + f.code); if (!el) continue;
-      const v = r.fv[f.code]; const c = fundCost(f);
+      const v = r.fv[f.code];
       const share = r.total ? v.value / r.total * 100 : 0;
-      let pl = '';
-      if (c != null && v.src === 'units'){ const d = v.value - c; pl = `<span>損益 <b class="pl ${d>=0?'up':'down'} num">${d>=0?'+':'−'}${yen(Math.abs(d))}（${(d/c*100).toFixed(1)}%）</b></span>`; }
-      el.innerHTML = `<span>評価額 <b class="num">${yen(v.value)}</b> <span class="lbl">${v.src === 'units' ? (isEtf(f) ? (isJpy(f) ? '株数×株価' : '株数×株価×ドル円') : '口数×基準価額') + '（' + esc(navNote(f)) + '）' : '直接入力'}・全体の${pct(share)}</span></span>${pl}${pl && isEtf(f) && !isJpy(f) ? '<span class="lbl" style="width:100%">損益は取得単価と今の株価の差を、今のドル円で円にしたものです</span>' : ''}`;
+      el.innerHTML = `<span>全体の${pct(share)}</span>`;
     }
   }
   // ---- 一覧：種類ごとに分けて並べる ----
@@ -875,7 +836,6 @@ details.more .note{margin-top:6px}
     const k = b.dataset.key; open.has(k) ? open.delete(k) : open.add(k); render();
   });
 
-  $('#inList').addEventListener('toggle', e => { const d = e.target; if (!d.matches || !d.matches('details.more')) return; d.open ? openDet.add(d.dataset.code) : openDet.delete(d.dataset.code); }, true);
   const timers = {};
   $('#inList').addEventListener('input', e => {
     const inp = e.target.closest('input[data-f]'); if (!inp) return;
@@ -1147,52 +1107,37 @@ details.more .note{margin-top:6px}
     }
     return { items, miss, sawHeader: !!col };
   }
-  // 同じ投信（口座ちがいなど）は合算する
+  // 1件ずつ金額にしてから、同じ投信（口座ちがいなど）は金額を足す
   function mergeItems(items){
     const m = new Map();
-    for (const it of items.filter(x => x.units != null || x.value != null)){
+    for (const it of items){
+      const pos = impPos(it); if (!pos) continue;
       const c = it.f.code;
-      if (!m.has(c)){ m.set(c, Object.assign({ n: 1 }, it)); continue; }
-      const a = m.get(c); a.n++;
-      if (a.units != null && it.units != null){
-        a.avg = a.avg != null && it.avg != null ? (a.avg * a.units + it.avg * it.units) / (a.units + it.units) : null;
-        a.units += it.units;
-      } else { a.units = null; a.avg = null; }
-      a.value = a.value != null && it.value != null ? a.value + it.value : null;
-      a.nav = a.nav ?? it.nav;
+      if (!m.has(c)){ m.set(c, { f: it.f, n: 1, pos: { value: pos.value, est: !!pos.est } }); continue; }
+      const a = m.get(c); a.n++; a.pos.value += pos.value; a.pos.est = a.pos.est || !!pos.est;
     }
-    return [...m.values()].filter(x => x.units != null || x.value != null);
+    return [...m.values()];
   }
-  // 入れる中身：投信は口数（＋平均取得価額）、ETFと口数がないものは金額
-  const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
-  function impNav(it){
-    let n = it.nav ?? (it.value != null && it.units ? it.value * 10000 / it.units : null);
-    const ref = it.f.nav;
-    if (n == null || !ref || n / ref < 0.5 || n / ref > 2) return null; // 読み違いらしい値は使わない
-    return Math.round(n * 100) / 100;
-  }
+  // 入れるのは金額だけ。画面に評価額が無く口数だけのときは、口数×基準価額（画面の値、なければアプリの月次の値）で金額にする
   function impPos(it){
-    const e = isEtf(it.f);
-    if (!e && it.units != null){
-      const o = { units: it.units }; if (it.avg != null) o.avgCost = Math.round(it.avg * 100) / 100;
-      const n = impNav(it); if (n != null) o.navImp = { v: n, at: todayStr() };
-      return o;
-    }
     if (it.value != null) return { value: Math.round(it.value) };
-    if (it.units != null) return { units: it.units };
-    return null;
+    if (it.units == null) return null;
+    const f = it.f;
+    if (isEtf(f)){ const pr = priceOf(f), fx = isJpy(f) ? 1 : f.fxUsdJpy; return pr && fx ? { value: Math.round(it.units * pr * fx), est: true } : null; }
+    let nav = it.nav; if (nav == null || !f.nav || nav / f.nav < 0.5 || nav / f.nav > 2) nav = f.nav;
+    return nav ? { value: Math.round(it.units * nav / 10000), est: true } : null;
   }
   let impRes = [];
   const fmtN = n => Number(n).toLocaleString('ja-JP', { maximumFractionDigits: 2 });
   function showImp(res, srcLabel){
-    impRes = mergeItems(res.items).map(it => Object.assign(it, { pos: impPos(it), on: true })).filter(it => it.pos);
+    impRes = mergeItems(res.items).map(it => Object.assign(it, { on: true }));
     const held = new Set(sample ? [] : sel);
     let h = '';
     if (impRes.length){
       h += `<p class="imph">${esc(srcLabel)}から${impRes.length}本見つかりました</p>`;
       h += impRes.map((it, i) => {
         const p = it.pos, e = isEtf(it.f);
-        const what = p.units != null ? `${e ? '株数' : '口数'} ${fmtN(p.units)}${e ? '' : '口'}${p.avgCost != null ? `・平均取得価額 ${fmtN(p.avgCost)}円` : ''}${p.navImp ? `・基準価額 ${fmtN(p.navImp.v)}円` : ''}` : `金額 ${yen(p.value)}`;
+        const what = `金額 ${yen(p.value)}${p.est ? `（${e ? '株数' : '口数'}から計算）` : ''}`;
         const note = it.n > 1 ? `${it.n}か所の分を合わせました` : '';
         return `<label class="impit"><input type="checkbox" data-i="${i}" checked><b>${esc(it.f.short || it.f.name)}</b>${held.has(it.f.code) ? '<em>入力を置きかえ</em>' : '<span></span>'}<small>${esc(what)}</small>${note ? `<small class="src">${esc(note)}</small>` : ''}</label>`;
       }).join('');
@@ -1237,11 +1182,9 @@ details.more .note{margin-top:6px}
     if (document.activeElement && $('#inList').contains(document.activeElement)) document.activeElement.blur();
     if (sample){ sample = false; sel = []; positions = {}; }
     for (const it of list){
-      const c = it.f.code, old = positions[c] || {};
+      const c = it.f.code;
       if (!sel.includes(c)) sel.push(c);
-      const keep = {}; if (old.navOverride != null) keep.navOverride = old.navOverride; if (old.fxOverride != null) keep.fxOverride = old.fxOverride;
-      positions[c] = Object.assign({ code: c }, keep, it.pos);
-      if (it.pos.units != null) openDet.add(c);
+      positions[c] = { code: c, value: it.pos.value };
     }
     setFunds(); persist(); toggleImp(false); render();
     const first = list[0].f.code;
@@ -1296,7 +1239,7 @@ details.more .note{margin-top:6px}
   $('#sheetBody').addEventListener('click', e => { if (e.target.closest('[data-more]')) { sheetLimit += 100; renderSheet(); } });
   document.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) { e.preventDefault(); openSheet(b.dataset.open, b); } });
 
-  $('#goInput').addEventListener('click', () => { $('#tab-in').click(); setTimeout(() => { $('#p-in').scrollIntoView({ block: 'start', behavior: 'smooth' }); $('#addFund').focus({ preventScroll: true }); }, 0); });
+  $('#goInput').addEventListener('click', () => { $('#tab-in').click(); toggleImp(true); setTimeout(() => { $('#impBox').scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 0); });
 
   // ---- データ読み込み ----
   try { ALL = JSON.parse(document.getElementById('fund-data').textContent).sort((a,b) => (a.order||99) - (b.order||99)); } catch(e){ ALL = []; }
@@ -1304,6 +1247,7 @@ details.more .note{margin-top:6px}
   try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch(e){}
   if (saved && Array.isArray(saved.sel)){
     sel = saved.sel.filter(c => ALL.some(f => f.code === c)); positions = saved.positions || {};
+    if (Object.values(positions).some(p => p && (p.units != null || p.avgCost != null || p.navOverride != null || p.fxOverride != null || p.navImp != null))){ valueOnly(); persist(); }
   } else {
     sample = true;
     SAMPLE.forEach(([c, v]) => { if (ALL.some(f => f.code === c)){ sel.push(c); positions[c] = { code: c, value: v }; } });
