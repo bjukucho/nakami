@@ -932,7 +932,6 @@ details.more .note{margin-top:6px}
 
   $('#goInput').addEventListener('click', () => { $('#tab-in').click(); setTimeout(() => { $('#p-in').scrollIntoView({ block: 'start', behavior: 'smooth' }); $('#addFund').focus({ preventScroll: true }); }, 0); });
 
-
   // ---- データ読み込み ----
   try { ALL = JSON.parse(document.getElementById('fund-data').textContent).sort((a,b) => (a.order||99) - (b.order||99)); } catch(e){ ALL = []; }
   let saved = null;
