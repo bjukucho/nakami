@@ -169,7 +169,7 @@ a{color:var(--accent)}
 .pie-center .t2{font-size:20px;font-weight:700;fill:var(--ink)}
 .pie-center .t3{font-size:13px;fill:var(--ink-2)}
 .pieopts{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between;width:100%}
-body::after{content:"";position:fixed;inset:0;z-index:60;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='130'%3E%3Ctext x='100' y='70' text-anchor='middle' transform='rotate%28-24 100 65%29' font-family='-apple-system,Hiragino Sans,sans-serif' font-size='17' font-weight='700' fill='%23808080'%3E@besuko_%3C/text%3E%3C/svg%3E");background-size:200px 130px;opacity:.13}
+body::after{content:"@besuko_";position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:60;pointer-events:none;font:600 12px/1 var(--font);letter-spacing:.04em;color:var(--ink);opacity:.09}
 .wm{font-size:11px;color:var(--muted);opacity:.75;letter-spacing:.03em;font-weight:600;pointer-events:none;user-select:none}
 .wm-co{text-align:right;margin:-6px 4px -6px 0}
 .piewrap{position:relative;width:100%;max-width:320px}
@@ -342,7 +342,6 @@ details.more .note{margin-top:6px}
       <div class="seg" role="group" aria-label="表示"><button id="mYen" aria-pressed="true">金額</button><button id="mPct" aria-pressed="false">割合</button></div>
     </div>
     <button class="ghost picopen" id="picOpen" aria-haspopup="dialog" hidden>上位の会社を画像にする（Xに貼れます）</button>
-    <div class="wm wm-co" aria-hidden="true">@besuko_</div>
     <div class="list" id="coList"></div>
     <p class="note">会社名を押すと、どの投信からいくら持っているかが出ます。</p>
   </section>
@@ -353,7 +352,7 @@ details.more .note{margin-top:6px}
         <div class="seg" role="group" aria-label="分け方"><button id="gCo" aria-pressed="true">会社</button><button id="gCountry" aria-pressed="false">国</button><button id="gSector" aria-pressed="false">業種</button></div>
         <label class="chk"><input type="checkbox" id="incUnseen">その他（小さい銘柄・現金など）も入れる</label>
       </div>
-      <div class="piewrap"><svg id="pie" viewBox="0 0 320 320" role="img" aria-label="保有の内訳の円グラフ"></svg><span class="wm" aria-hidden="true">@besuko_</span></div>
+      <div class="piewrap"><svg id="pie" viewBox="0 0 320 320" role="img" aria-label="保有の内訳の円グラフ"></svg></div>
       <div class="plist" id="plist"></div>
     </div>
     <button class="ghost picopen" id="picOpenPie" aria-haspopup="dialog" hidden>このグラフを画像にする</button>
@@ -1575,15 +1574,8 @@ details.more .note{margin-top:6px}
     g.fillStyle = '#868b82'; g.font = `600 24px ${F}`; g.fillText('プロデュース by ベス子', 64, fy + 112);
     g.fillStyle = '#1f6b45'; g.font = `800 44px ${F}`; g.textAlign = 'right'; g.fillText('@besuko_', W - 64, fy + 74);
     g.fillStyle = '#4f544c'; g.font = `600 24px ${F}`; g.fillText('アプリはプロフィールから', W - 64, fy + 112); g.textAlign = 'left';
-    // 切り取っても消えないよう、題の横と、画像全体に薄く斜めのアカウント名を入れる
-    g.fillStyle = '#1f6b45'; g.font = `800 30px ${F}`; g.textAlign = 'right'; g.fillText('@besuko_', W - 64, 56); g.textAlign = 'left';
-    g.save(); g.globalAlpha = 0.06; g.fillStyle = '#151714'; g.font = `800 36px ${F}`; g.textAlign = 'center';
-    for (let yy = 170, row = 0; yy < H + 200; yy += 330, row++){
-      for (let xx = (row % 2 ? 180 : 450); xx < W + 200; xx += 560){ g.save(); g.translate(xx, yy); g.rotate(-0.42); g.fillText('@besuko_', 0, 0); g.restore(); }
-    }
-    // 中身のまん中にも、少し大きく1つ（ここを消すと中身まで見づらくなる）
-    if (cy){ g.globalAlpha = 0.08; g.font = `800 64px ${F}`; g.translate(W / 2, cy); g.rotate(-0.42); g.fillText('投信中身マップ @besuko_', 0, 0); }
-    g.restore();
+    // アカウント名は画像のまん中に1つだけ、見えるか見えないかの薄さで
+    if (cy){ g.save(); g.globalAlpha = 0.1; g.fillStyle = '#151714'; g.font = `600 24px ${F}`; g.textAlign = 'center'; g.fillText('@besuko_', W / 2, cy); g.restore(); }
   }
   const PIC_HEX = { '--s1':'#2a78d6','--s2':'#eb6834','--s3':'#1baf7a','--s4':'#eda100','--s5':'#e87ba4','--s6':'#008300','--s7':'#6250d6','--s8':'#e34948','--s9':'#9a6324','--s10':'#0f8ea6','--pie-a':'#8f978a','--pie-b':'#b4bbae','--pie-rest':'#dfe3da','--unseen':'#c9cdc3' };
   const picHex = c => { const m = String(c).match(/var\((--[\w-]+)\)/); return m ? (PIC_HEX[m[1]] || '#8f978a') : c; };
@@ -1614,7 +1606,7 @@ details.more .note{margin-top:6px}
     items.forEach(it => { const da = it.amt / sum * Math.PI * 2; g.beginPath(); g.arc(W / 2, cy0, R, a, a + da); g.arc(W / 2, cy0, r0, a + da, a, true); g.closePath(); g.fillStyle = picHex(it.color); g.fill(); g.strokeStyle = '#f6f7f4'; g.lineWidth = 2; g.stroke(); a += da; });
     g.textAlign = 'center'; g.fillStyle = '#868b82'; g.font = `600 30px ${F}`; g.fillText(`${GN}の数`, W / 2, cy0 - 18);
     g.fillStyle = '#151714'; g.font = `800 64px ${F}`; g.fillText(`${pieGroup === 'co' ? r.list.length + '社' : items.filter(i => i.key !== '__unseen').length + (pieGroup === 'country' ? 'か国' : '業種')}`, W / 2, cy0 + 50);
-    g.fillStyle = '#1f6b45'; g.font = `700 24px ${F}`; g.fillText('投信中身マップ', W / 2, cy0 + 100); g.fillText('by @besuko_', W / 2, cy0 + 130); g.textAlign = 'left';
+    g.textAlign = 'left';
     const fs = n <= 10 ? 34 : n <= 20 ? 30 : 27, right = W - 64;
     list.forEach((e, i) => {
       const y = top + i * rowH, ys = y + rowH * 0.64, p = e.amt / sum * 100;
@@ -1626,7 +1618,7 @@ details.more .note{margin-top:6px}
       g.textAlign = 'left'; g.fillStyle = '#151714'; g.fillText(fit(e.name, right - 120 - pw - 24), 120, ys);
     });
     if (more > 0){ g.fillStyle = '#868b82'; g.font = `600 26px ${F}`; g.fillText(`ほか${more}${pieGroup === 'co' ? '社' : pieGroup === 'country' ? 'か国' : '業種'}`, 120, top + k * rowH + 42); }
-    picDeco(g, W, H, top + k * rowH + (more > 0 ? 60 : 0) + 40, F, cy0 + R - 40);  // 円の下側の輪に重ねる
+    picDeco(g, W, H, top + k * rowH + (more > 0 ? 60 : 0) + 40, F, Math.round(H / 2));
     return cv;
   }
   // 投信を比べる表の画像：アプリの表と同じ計算（選んだ投信を同じ金額ずつ持ったときの平均で多い順）
@@ -1670,7 +1662,7 @@ details.more .note{margin-top:6px}
       });
       g.fillStyle = '#151714'; g.font = `800 ${k <= 10 ? 28 : 25}px ${F}`; g.textAlign = 'center'; g.fillText(c.avg.toFixed(2) + '%', W - 40 - totW / 2, ys); g.textAlign = 'left';
     });
-    picDeco(g, W, H, top + headH + k * rowH + 40, F, top + headH + k * rowH / 2);
+    picDeco(g, W, H, top + headH + k * rowH + 40, F, Math.round(H / 2));
     return cv;
   }
   function drawPic(n){
@@ -1744,7 +1736,7 @@ details.more .note{margin-top:6px}
         tx += 16 + g.measureText(label).width + 24; shown++;
       }
     });
-    picDeco(g, W, H, top + k * rowH + 40, F, top + k * rowH / 2);
+    picDeco(g, W, H, top + k * rowH + 40, F, Math.round(H / 2));
     return cv;
   }
   function renderPic(){
