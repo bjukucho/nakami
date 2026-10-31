@@ -93,7 +93,6 @@ table.heat{border-collapse:collapse;width:100%;table-layout:fixed;font-size:10.5
 .chip{font:inherit;font-size:13px;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--bg);color:var(--ink);border-radius:999px;padding:4px 10px 4px 4px;cursor:pointer;max-width:100%}
 .chip span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chip .x{color:var(--muted);font-size:14px;line-height:1;flex:none}
-.addrow select:disabled{color:var(--muted)}
 .heat thead th .dot{display:block;margin:0 auto 4px;width:9px;height:9px}
 .heat th.nm{text-align:left;padding:2px 3px 2px 8px;font-weight:600;font-size:11.5px;line-height:1.15;overflow:hidden;overflow-wrap:anywhere}
 .heat th.nm b{display:block;color:var(--muted);font-weight:500;font-size:9.5px}
@@ -132,7 +131,6 @@ a{color:var(--accent)}
 .st-s{margin:0;font-size:13px;color:var(--ink-2)}
 .st-n{margin:0;font-size:12px;color:var(--muted);text-align:center}
 .addrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.addrow select{font:inherit;font-size:15px;padding:9px 10px;border:1px solid var(--line-2);border-radius:9px;background:var(--bg);color:var(--ink);flex:1;min-width:0}
 .acts{display:flex;gap:4px;margin-left:auto;flex:none;align-items:center}
 .mv{font:inherit;font-size:15px;line-height:1;width:34px;height:30px;padding:0;border:1px solid var(--line-2);background:transparent;color:var(--ink-2);border-radius:8px;cursor:pointer;flex:none}
 .mv:disabled{opacity:.3;cursor:default}
@@ -156,6 +154,10 @@ a{color:var(--accent)}
 .leg{display:flex;gap:14px;font-size:12px;color:var(--muted)} .leg span{display:inline-flex;align-items:center;gap:5px} .leg i{width:16px}
 .simin{display:grid;grid-template-columns:1fr;gap:10px}
 .simin select,.simin input{font:inherit;font-size:16px;padding:9px 10px;border:1px solid var(--line-2);border-radius:9px;background:var(--bg);color:var(--ink);width:100%;min-width:0}
+.simpick{display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;width:100%;min-width:0}
+.simpick span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.simpick .go{flex:none;font-size:18px;line-height:1}
+.simpick.on{background:var(--accent-wash)}
 .amts{display:flex;gap:6px;flex-wrap:wrap}
 .amts button{font:inherit;font-size:13px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);border-radius:999px;padding:5px 12px;cursor:pointer}
 .empty-state{background:var(--surface);border:1px dashed var(--line-2);border-radius:14px;padding:22px;text-align:center;color:var(--ink-2)}
@@ -219,7 +221,6 @@ details.more .note{margin-top:6px}
 .cta:disabled{opacity:.45;cursor:default}
 .pickbox{display:flex;flex-direction:column;gap:8px;border-top:1px dashed var(--line-2);padding-top:10px}
 .pickbox input[type=search]{font:inherit;font-size:16px;padding:9px 10px;border:1px solid var(--line-2);border-radius:9px;background:var(--bg);color:var(--ink);width:100%;min-width:0}
-.picklist{max-height:52vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
 .pickh{position:sticky;top:0;z-index:1;background:var(--bg);color:var(--ink-2);font-size:12px;font-weight:600;padding:6px 10px;border-bottom:1px solid var(--line)}
 .pickit{display:grid;grid-template-columns:22px 1fr auto;gap:1px 10px;align-items:center;padding:9px 10px;border-bottom:1px solid var(--line);cursor:pointer}
 .pickit:last-child{border-bottom:0}
@@ -363,8 +364,8 @@ details.more .note{margin-top:6px}
 
   <section class="panel" id="p-sim" hidden>
     <div class="card simin">
-      <label class="lbl" for="simFund">買う投信</label>
-      <select id="simFund"></select>
+      <div class="lbl" id="simFundLbl">買う投信</div>
+      <button class="ghost simpick" id="simFund" aria-haspopup="dialog" aria-describedby="simFundLbl"><span id="simFundName">買う投信を選ぶ</span><span class="go" aria-hidden="true">›</span></button>
       <label class="lbl" for="simAmt">買う金額（円）</label>
       <input id="simAmt" inputmode="numeric" value="1,000,000">
       <div class="amts"><button data-amt="500000">50万</button><button data-amt="1000000">100万</button><button data-amt="3000000">300万</button><button data-amt="10000000">1,000万</button></div>
@@ -381,14 +382,8 @@ details.more .note{margin-top:6px}
   </section>
 
   <section class="panel" id="p-in" hidden>
-    <div class="card"><label for="addFund" class="lbl">持っている投信を入れる</label>
-      <div class="addrow"><select id="addFund"></select></div>
-      <button class="ghost" id="pickOpen" aria-expanded="false" aria-controls="pickBox">名前で探して入れる</button>
-      <div class="pickbox" id="pickBox" hidden>
-        <input id="pickQ" type="search" enterkeyhint="search" autocomplete="off" placeholder="例 オルカン、S&amp;P、高配当" aria-label="投信の名前で探す">
-        <div class="picklist" id="pickList" role="group" aria-label="追加する投信"></div>
-        <div class="pickbar"><button class="cta" id="pickAdd" disabled>投信に印を付けてください</button><button class="rm" id="pickClose">閉じる</button></div>
-      </div>
+    <div class="card"><div class="lbl" id="addFundLbl">持っている投信を入れる</div>
+      <button class="cta" id="addFund" aria-haspopup="dialog" aria-describedby="addFundLbl">投信を選んで入れる</button>
       <button class="ghost" id="impOpen" aria-expanded="false" aria-controls="impBox">スクショ・CSVで入れる</button>
       <div class="pickbox" id="impBox" hidden>
         <p class="note">証券会社アプリの保有一覧をスクショして選ぶだけ。何枚でもまとめて選べます。写真はどこにも送りません。</p>
@@ -696,8 +691,11 @@ details.more .note{margin-top:6px}
     $('#heatSum').textContent = `上位${rows.length}社の合計：選んだ投信の平均で${pct(s20)}` + (heatSel ? '' : `。いまは持っている投信のうち評価額の大きい${HEAT_MAX}本までを並べています。`);
   }
   // 比べる投信を選ぶ画面：印を付け外しして、最後に「決定」で反映する（スクロール中の誤タップで勝手に入らないように）
-  let cmpDraft = [], cmpLastScroll = 0, cmpTouch = null, cmpReturn = null, cmpOpts = null, cmpStart = '';
+  // 「買い足すと？」の買う投信も同じ画面で1本だけ選ぶ（cmpMode が 'sim'）。持っている投信を入れるときも同じ画面で何本でも選ぶ（'add'）
+  let cmpDraft = [], cmpLastScroll = 0, cmpTouch = null, cmpReturn = null, cmpOpts = null, cmpStart = '', cmpMode = 'heat';
   function cmpOptions(){
+    // 入れるときは、兄弟コースも含めて1本ずつ並べる（持っているコースそのものを選んでもらうため）
+    if (cmpMode === 'add') return { list: ALL.slice(), many: new Map(), hs: pickHeld(), members: new Map() };
     // 中身が同じ投信（兄弟コース・同じ指数）は1本にまとめる。選んでいる投信・持っている投信はその名前で出す
     const hs = new Set(funds.map(f => f.code)), ds = new Set(cmpDraft), byG = new Map();
     ALL.forEach(f => { const k = sameKey(f); if (!byG.has(k)) byG.set(k, []); byG.get(k).push(f); });
@@ -714,30 +712,56 @@ details.more .note{margin-top:6px}
   }
   function renderCmp(){
     const q = $('#cmpQ').value.trim(), terms = q.split(/[\s　]+/).map(normQ).filter(Boolean);
-    const { list, many, hs, members } = cmpOpts, ds = new Set(cmpDraft), full = cmpDraft.length >= HEAT_MAX;
+    const { list, many, hs, members } = cmpOpts, ds = new Set(cmpDraft), one = cmpMode === 'sim', adding = cmpMode === 'add', full = cmpMode === 'heat' && cmpDraft.length >= HEAT_MAX;
     const hit = f => terms.every(t => (members.get(f.code) || [f]).some(m => hay(m).includes(t)));
+    // 探した名前が、表に出ている投信ではなく同じ中身の別の投信に合ったときは、その名前を添える
+    const via = f => { if (!terms.length || terms.every(t => hay(f).includes(t))) return ''; const ms = (members.get(f.code) || []).filter(m => m !== f && terms.every(t => hay(m).includes(t))); return ms.map(m => m.short || m.name).join('、'); };
     const html = KINDS.map(k => {
-      const g = list.filter(f => kindOf(f) === k.id && (!terms.length || hit(f))).sort((a, b) => (hs.has(b.code) - hs.has(a.code)) || (a.order || 99) - (b.order || 99));
+      const g = list.filter(f => kindOf(f) === k.id && (!terms.length || hit(f))).sort((a, b) => (adding ? 0 : hs.has(b.code) - hs.has(a.code)) || (a.order || 99) - (b.order || 99));
       if (!g.length) return '';
       return `<div class="pickh">${esc(k.name)}</div>` + g.map(f => {
         const on = ds.has(f.code), n = on ? cmpDraft.indexOf(f.code) + 1 : 0;
-        return `<div class="pickit${!on && full ? ' off' : ''}" role="checkbox" tabindex="0" aria-checked="${on}" data-c="${esc(f.code)}"><input type="checkbox" tabindex="-1" aria-hidden="true"${on ? ' checked' : ''}><b>${esc(f.short || f.name)}${many.has(f.code) ? ' など' : ''}</b>${on ? `<em>${n}</em>` : hs.has(f.code) ? '<em>保有中</em>' : '<span></span>'}<small>${many.has(f.code) ? '同じ中身：' + esc(many.get(f.code).map(m => m.short || m.name).join('、')) : esc(f.name)}</small></div>`;
+        if (adding){
+          const h = hs.has(f.code);
+          return `<div class="pickit${h ? ' done' : ''}" role="checkbox" tabindex="${h ? -1 : 0}" aria-checked="${h || on}"${h ? ' aria-disabled="true"' : ''} data-c="${esc(f.code)}"><input type="checkbox" tabindex="-1" aria-hidden="true"${h || on ? ' checked' : ''}${h ? ' disabled' : ''}><b>${esc(f.short || f.name)}</b>${h ? '<em>追加済み</em>' : '<span></span>'}<small>${esc(f.name)}</small></div>`;
+        }
+        return `<div class="pickit${!on && full ? ' off' : ''}" role="${one ? 'radio' : 'checkbox'}" tabindex="0" aria-checked="${on}" data-c="${esc(f.code)}"><input type="${one ? 'radio' : 'checkbox'}" tabindex="-1" aria-hidden="true"${on ? ' checked' : ''}><b>${esc(f.short || f.name)}${many.has(f.code) ? ' など' : ''}</b>${on ? `<em>${one ? (hs.has(f.code) ? '買い増し' : '選択中') : n}</em>` : hs.has(f.code) ? '<em>保有中</em>' : '<span></span>'}<small>${via(f) ? '同じ中身：' + esc(via(f)) : many.has(f.code) ? '同じ中身：' + esc(many.get(f.code).map(m => m.short || m.name).join('、')) : esc(f.name)}</small></div>`;
       }).join('');
     }).join('');
-    $('#cmpList').innerHTML = html || `<p class="pickempty">「${esc(q)}」に合う投信はありません。</p>`;
+    $('#cmpList').innerHTML = html || `<p class="pickempty">${q ? `「${esc(q)}」に合う投信はありません。` : '投信の一覧を読み込んでいます。'}</p>`;
     updateCmpNow();
   }
   function updateCmpNow(msg){
     const names = cmpDraft.map(c => { const f = ALL.find(x => x.code === c); return f ? (f.short || f.name) : c; });
     const el = $('#cmpNow');
     el.classList.toggle('warn', !!msg);
+    if (cmpMode === 'add'){
+      el.innerHTML = names.length ? `選んだ投信 <b>${names.length}本</b>：${esc(names.join('、'))}` : '持っている投信に印を付けてください（何本でも選べます）';
+      $('#cmpOk').textContent = names.length ? `選んだ${names.length}本を入れる` : '投信に印を付けてください';
+      $('#cmpOk').disabled = !names.length;
+      return;
+    }
+    if (cmpMode === 'sim'){
+      el.innerHTML = names.length ? `買う投信：<b>${esc(names[0])}</b>` : '買う投信を1本選んでください';
+      $('#cmpOk').textContent = cmpDraft.length ? 'この投信で試す' : '投信を選んでください';
+      $('#cmpOk').disabled = !cmpDraft.length;
+      return;
+    }
     el.innerHTML = msg ? `<b>${esc(msg)}</b>` : `選んでいる投信 <b>${cmpDraft.length}/${HEAT_MAX}本</b>${names.length ? '：' + esc(names.join('、')) : '（下から印を付けてください）'}`;
     $('#cmpOk').textContent = cmpDraft.length ? `${cmpDraft.length}本で比べる` : '投信に印を付けてください';
     $('#cmpOk').disabled = !cmpDraft.length;
   }
-  function openCmp(){
+  function openCmp(mode){
     cmpReturn = document.activeElement;
-    cmpDraft = heatCols(compute()).map(f => f.code); cmpStart = cmpDraft.join();
+    cmpMode = mode === 'sim' || mode === 'add' ? mode : 'heat';
+    const one = cmpMode === 'sim', W = { heat: '比べる投信', sim: '買う投信', add: '入れる投信' }[cmpMode];
+    $('#cmpTitle').textContent = W + 'を選ぶ';
+    $('#cmpList').setAttribute('aria-label', W);
+    $('#cmpList').setAttribute('role', one ? 'radiogroup' : 'group');
+    $('#cmpQ').setAttribute('aria-label', W + 'を名前で探す');
+    $('#cmpX').setAttribute('aria-label', cmpMode === 'add' ? '入れずに閉じる' : '選ばずに閉じる');
+    $('#cmpClear').hidden = one;
+    cmpDraft = one ? (simCode && ALL.some(f => f.code === simCode) ? [simCode] : []) : cmpMode === 'add' ? [] : heatCols(compute()).map(f => f.code); cmpStart = cmpDraft.join();
     $('#cmpQ').value = ''; cmpOpts = cmpOptions();
     $('#cmpBg').hidden = false; $('#cmp').hidden = false; document.body.style.overflow = 'hidden';
     renderCmp(); $('#cmpList').scrollTop = 0;
@@ -749,12 +773,16 @@ details.more .note{margin-top:6px}
   }
   function toggleCmp(c){
     const i = cmpDraft.indexOf(c);
-    if (i >= 0) cmpDraft.splice(i, 1);
+    if (cmpMode === 'add'){ if (cmpOpts.hs.has(c)) return; if (i >= 0) cmpDraft.splice(i, 1); else cmpDraft.push(c); }
+    else if (cmpMode === 'sim') cmpDraft = [c]; // 1本だけ。選んだ行をもう一度押しても外さない
+    else if (i >= 0) cmpDraft.splice(i, 1);
     else if (cmpDraft.length >= HEAT_MAX){ updateCmpNow(`${HEAT_MAX}本まで選べます。どれかの印を外してから選んでください`); return; }
     else cmpDraft.push(c);
     const top = $('#cmpList').scrollTop; renderCmp(); $('#cmpList').scrollTop = top;
   }
-  $('#heatAdd').addEventListener('click', openCmp);
+  $('#heatAdd').addEventListener('click', () => openCmp('heat'));
+  $('#simFund').addEventListener('click', () => openCmp('sim'));
+  $('#addFund').addEventListener('click', () => openCmp('add'));
   $('#cmpX').addEventListener('click', closeCmp);
   // 印を変えたあとは、背景に触れただけでは閉じない（×で閉じると変更は取り消し）
   $('#cmpBg').addEventListener('click', () => { if (cmpDraft.join() === cmpStart) closeCmp(); });
@@ -773,6 +801,8 @@ details.more .note{margin-top:6px}
   $('#cmpClear').addEventListener('click', () => { cmpDraft = []; renderCmp(); });
   $('#cmpOk').addEventListener('click', () => {
     if (!cmpDraft.length) return;
+    if (cmpMode === 'sim'){ simCode = cmpDraft[0]; closeCmp(); renderSim(); return; }
+    if (cmpMode === 'add'){ addPicked(cmpDraft); return; }
     if (heatSel === null && cmpDraft.join() === cmpStart){ closeCmp(); return; }
     heatSel = cmpDraft.slice(0, HEAT_MAX); saveHeatSel(); closeCmp(); renderHeat(compute());
   });
@@ -784,12 +814,7 @@ details.more .note{margin-top:6px}
   $('#heatReset').addEventListener('click', () => { heatSel = null; saveHeatSel(); renderHeat(compute()); });
 
 
-  function renderPicker(){
-    const opts = ALL.filter(f => !sel.includes(f.code));
-    $('#addFund').innerHTML = '<option value="">選んでください（' + opts.length + '本）</option>' + groupedOptions(opts);
-  }
   function renderInputs(r){
-    renderPicker();
     const box = $('#inList');
     const active = document.activeElement && box.contains(document.activeElement) ? document.activeElement.id : null;
     if (active) { updateCalcs(r); return; } // 入力中は入力欄を作り直さない
@@ -901,12 +926,13 @@ details.more .note{margin-top:6px}
   }
   function simPool(){ return POOL(); }
   function renderSimPicker(){
-    const sel = $('#simFund'); if (!sel) return;
-    const pool = simPool();
-    const held = new Set(funds.map(f => f.code));
-    const cur = simCode;
-    sel.innerHTML = '<option value="">投信を選んでください</option>' + groupedOptions(pool, (f, h) => (f.short || f.name) + (h ? '（保有中・買い増し）' : ''));
-    sel.value = cur;
+    const btn = $('#simFund'); if (!btn) return;
+    const f = simPool().find(x => x.code === simCode);
+    if (!f) simCode = '';
+    const held = f && funds.some(x => x.code === f.code);
+    $('#simFundName').textContent = f ? (f.short || f.name) + (held ? '（保有中・買い増し）' : '') : '買う投信を選ぶ';
+    btn.classList.toggle('on', !!f);
+    btn.setAttribute('aria-label', f ? `買う投信：${f.short || f.name}。押すと選び直せます` : '買う投信を選ぶ');
   }
   const sh = (amt, tot) => tot ? amt / tot * 100 : 0;
   const pp = d => (d >= 0 ? '+' : '−') + Math.abs(d).toFixed(2);
@@ -994,7 +1020,6 @@ details.more .note{margin-top:6px}
   $('#sellAmt').addEventListener('blur', e => { if (sellAmtIn != null) e.target.value = sellAmtIn.toLocaleString('ja-JP'); });
   $('#sellAllBtn').addEventListener('click', () => { sellAll = true; sellAmtIn = null; $('#sellAmt').value = ''; renderSim(); });
   $('#sellSameBtn').addEventListener('click', () => { sellAll = false; sellAmtIn = null; $('#sellAmt').value = ''; renderSim(); });
-  $('#simFund').addEventListener('change', e => { simCode = e.target.value; renderSim(); });
   $('#simAmt').addEventListener('input', e => { simAmt = numOrNull(e.target.value) || 0; renderSim(); });
   $('#simAmt').addEventListener('blur', e => { e.target.value = simAmt ? simAmt.toLocaleString('ja-JP') : ''; });
   document.querySelectorAll('[data-amt]').forEach(b => b.addEventListener('click', () => { simAmt = +b.dataset.amt; $('#simAmt').value = simAmt.toLocaleString('ja-JP'); renderSim(); }));
@@ -1066,14 +1091,6 @@ details.more .note{margin-top:6px}
     $('#sampleNote').hidden = true;
   }
   function setFunds(){ funds = sel.map(c => ALL.find(f => f.code === c)).filter(Boolean); }
-  $('#addFund').addEventListener('change', e => {
-    const c = e.target.value; if (!c) return;
-    if (document.activeElement && document.activeElement !== e.target && $('#inList').contains(document.activeElement)) document.activeElement.blur();
-    if (sample){ sample = false; sel = []; positions = {}; }
-    sel.push(c); positions[c] = positions[c] || { code: c };
-    setFunds(); persist(); render();
-    setTimeout(() => document.getElementById('v-' + c)?.focus(), 0);
-  });
   $('#inList').addEventListener('click', e => {
     const mv = e.target.closest('[data-mv]');
     if (mv){
@@ -1095,8 +1112,7 @@ details.more .note{margin-top:6px}
   });
 
 
-  // ---- 名前で探して、まとめて選ぶ ----
-  const pickSel = new Set();
+  // ---- 名前で探す（選ぶ画面と読み込みで使う） ----
   const NICK = { '0331418A': 'オルカン オールカントリー', '9I312179': 'VTI', '9I311179': 'VT', '64311215': '5G', '29314233': '半導体', '0431Q169': 'ダウ', '64313266': 'トレンドランキング' };
   const SYN = [[/ヴァ/g, 'バ'], [/ニッケイ/g, '日経'], [/トピックス/g, 'topix'], [/\bsp(?=\d)/g, 's&p'], [/ナスダック/g, 'nasdaq'], [/エスアンドピー|エスピー/g, 's&p'], [/スリム/g, 'slim'], [/イーマクシス/g, 'emaxis'], [/ファング/g, 'fang'], [/アイフリー/g, 'ifree'], [/バンガード/g, 'vanguard'], [/グローバルエックス/g, 'globalx'], [/トレーサーズ/g, 'tracers'], [/ソックス/g, 'sox']];
   function normQ(t){
@@ -1121,57 +1137,18 @@ details.more .note{margin-top:6px}
   }
   function pickOrder(){ return KINDS.flatMap(k => ALL.filter(f => kindOf(f) === k.id).sort((a, b) => (a.order || 99) - (b.order || 99))); }
   function pickHeld(){ return new Set(sample ? [] : sel); }
-  function renderPickList(){
-    const q = $('#pickQ').value.trim();
-    const terms = q.split(/[\s　]+/).map(normQ).filter(Boolean);
-    const held = pickHeld();
-    const html = KINDS.map(k => {
-      const g = ALL.filter(f => kindOf(f) === k.id && terms.every(t => hay(f).includes(t))).sort((a, b) => (a.order || 99) - (b.order || 99));
-      if (!g.length) return '';
-      return `<div class="pickh">${esc(k.name)}</div>` + g.map(f => {
-        const h = held.has(f.code);
-        return `<label class="pickit${h ? ' done' : ''}"><input type="checkbox" value="${esc(f.code)}"${h || pickSel.has(f.code) ? ' checked' : ''}${h ? ' disabled' : ''}><b>${esc(f.short || f.name)}</b>${h ? '<em>追加済み</em>' : '<span></span>'}<small>${esc(f.name)}</small></label>`;
-      }).join('');
-    }).join('');
-    $('#pickList').innerHTML = html || `<p class="pickempty">「${esc(q)}」に合う投信はありません。ほかの言葉でも探してみてください。</p>`;
-    updatePickBtn();
-  }
-  function updatePickBtn(){
-    const held = pickHeld();
-    const n = [...pickSel].filter(c => !held.has(c)).length;
-    const b = $('#pickAdd');
-    b.disabled = !n;
-    b.textContent = n ? `選んだ${n}本を追加` : '投信に印を付けてください';
-  }
-  function togglePick(open){
-    $('#pickBox').hidden = !open; $('#pickOpen').hidden = open;
-    $('#pickOpen').setAttribute('aria-expanded', open);
-    if (open){ pickSel.clear(); $('#pickQ').value = ''; renderPickList(); $('#pickList').scrollTop = 0; }
-  }
-  $('#pickOpen').addEventListener('click', () => togglePick(true));
-  $('#pickClose').addEventListener('click', () => { togglePick(false); $('#pickOpen').focus(); });
-  $('#pickQ').addEventListener('input', renderPickList);
-  $('#pickQ').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); e.target.blur(); } });
-  let pickLastScroll = 0, pickMoved = false, pickT = null;
-  $('#pickList').addEventListener('scroll', () => { pickLastScroll = Date.now(); }, { passive: true });
-  $('#pickList').addEventListener('touchstart', e => { const t = e.touches[0]; pickT = { x: t.clientX, y: t.clientY }; pickMoved = false; }, { passive: true });
-  $('#pickList').addEventListener('touchmove', e => { const t = e.touches[0]; if (pickT && (Math.abs(t.clientX - pickT.x) > 8 || Math.abs(t.clientY - pickT.y) > 8)) pickMoved = true; }, { passive: true });
-  // スクロールしていた指で触れただけのときは、印を変えない
-  $('#pickList').addEventListener('click', e => { if (e.target.closest('label.pickit') && (pickMoved || Date.now() - pickLastScroll < 350)){ e.preventDefault(); pickMoved = false; } }, true);
-  $('#pickList').addEventListener('change', e => {
-    const c = e.target.value; if (!c) return;
-    e.target.checked ? pickSel.add(c) : pickSel.delete(c);
-    updatePickBtn();
-  });
-  $('#pickAdd').addEventListener('click', () => {
+  function addPicked(codes){
     if (document.activeElement && $('#inList').contains(document.activeElement)) document.activeElement.blur();
     if (sample){ sample = false; sel = []; positions = {}; }
-    const add = pickOrder().map(f => f.code).filter(c => pickSel.has(c) && !sel.includes(c));
+    const want = new Set(codes);
+    const add = pickOrder().map(f => f.code).filter(c => want.has(c) && !sel.includes(c));
+    if (add.length) cmpReturn = null; // 入れたあとは、元のボタンではなく金額の入力欄へ移る
+    closeCmp();
     if (!add.length) return;
     add.forEach(c => { sel.push(c); positions[c] = positions[c] || { code: c }; });
-    setFunds(); persist(); togglePick(false); render();
+    setFunds(); persist(); render();
     setTimeout(() => { const el = document.getElementById('v-' + add[0]); if (el){ el.closest('.card').scrollIntoView({ block: 'start', behavior: 'smooth' }); el.focus({ preventScroll: true }); } }, 0);
-  });
+  }
 
   // ---- 証券会社の画面やCSVから読み込む ----
   // 文字認識が取り違えやすい字を同じ字にそろえる（照合のときだけ。両側に同じ変換をかける）
@@ -1571,7 +1548,7 @@ details.more .note{margin-top:6px}
   const toIn = box => { goTab('in'); setTimeout(() => { $(box).scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 0); };
   $('#stShot').addEventListener('click', () => { toggleImp(true); toIn('#impBox'); if (!ocrBusy) $('#ocrFile').click(); });
   $('#stCsv').addEventListener('click', () => { toggleImp(true); toIn('#impBox'); $('#impFile').click(); });
-  $('#stPick').addEventListener('click', () => { togglePick(true); toIn('#pickBox'); });
+  $('#stPick').addEventListener('click', () => { goTab('in'); openCmp('add'); cmpReturn = $('#addFund'); });
 
   // ---- データ読み込み ----
   // 同じマザーファンドに投資する兄弟コース（決算の頻度・為替ヘッジ・コース名だけが違う）は、中身を代表の投信と同じにして並べる
