@@ -42,12 +42,15 @@ h1{font-size:20px;margin:0;letter-spacing:.02em;text-wrap:balance}
 .big .val{font-size:28px;letter-spacing:.01em}
 .coverbar{height:8px;border-radius:4px;background:var(--unseen);overflow:hidden;margin-top:6px}
 .coverbar i{display:block;height:100%;background:var(--accent);border-radius:4px}
-.tabs{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 .tabs button{font:inherit;font-size:12px;letter-spacing:-.02em;border:0;background:transparent;color:var(--ink-2);padding:9px 2px;border-radius:9px;cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--accent-wash);color:var(--accent);font-weight:650}
 button:focus-visible,input:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .panel{display:flex;flex-direction:column;gap:12px}
+.subnav{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:-8px}
+.subnav button{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);border-radius:10px;padding:9px 4px;cursor:pointer}
+.subnav button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px;color:var(--ink-2)}
 .legend span{display:inline-flex;align-items:center;gap:5px}
 .dot{width:10px;height:10px;border-radius:3px;flex:none;display:inline-block}
@@ -115,7 +118,11 @@ table.heat{border-collapse:collapse;width:100%;table-layout:fixed;font-size:10.5
 .src{display:flex;flex-direction:column;gap:4px;font-size:13px}
 .src .k{color:var(--muted)}
 a{color:var(--accent)}
-.sample{margin:0;background:var(--accent-wash);color:var(--accent);border-radius:12px;padding:10px 14px;font-size:13.5px;font-weight:600}
+.start{margin:0;background:var(--accent-wash);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.start .cta{margin:0}
+.st-h{margin:0;font-size:17px;font-weight:800;color:var(--accent)}
+.st-s{margin:0;font-size:13px;color:var(--ink-2)}
+.st-n{margin:0;font-size:12px;color:var(--muted);text-align:center}
 .addrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .addrow select{font:inherit;font-size:15px;padding:9px 10px;border:1px solid var(--line-2);border-radius:9px;background:var(--bg);color:var(--ink);flex:1;min-width:0}
 .acts{display:flex;gap:4px;margin-left:auto;flex:none;align-items:center}
@@ -268,22 +275,31 @@ details.more .note{margin-top:6px}
     <p class="sub" id="asof">月次レポートを読み込んでいます</p>
   </header>
 
-  <div class="sample" id="sampleNote" hidden>いま出ているのは見本の数字です。自分の投信を入れると、自分の中身に切り替わります。<button class="cta" id="goInput">自分の投信を入れる</button></div>
+  <div class="start" id="sampleNote" hidden>
+    <p class="st-h">あなたの投信の中身を見てみましょう</p>
+    <p class="st-s">証券会社の保有一覧から、まとめて入れられます</p>
+    <div class="pickbar"><button class="cta" id="stShot">スクショで入れる</button><button class="cta" id="stCsv">CSVで入れる</button></div>
+    <button class="ghost" id="stPick">名前で選んで入れる</button>
+    <p class="st-n" id="stNote">下は見本の数字です</p>
+  </div>
 
   <section class="summary" aria-label="まとめ">
     <div class="big"><div class="lbl">投信の評価額 合計</div><div class="val num" id="sumTotal">—</div></div>
     <div class="tops"><div><div class="lbl">いちばん多い会社</div><div class="tv" id="sumTop">—</div></div><div><div class="lbl">いちばん多い国</div><div class="tv" id="sumCountry">—</div></div><div><div class="lbl">いちばん多い業種</div><div class="tv" id="sumSector">—</div></div></div>
-    <div style="grid-column:1/-1"><div class="lbl">中身が見えている割合 <span class="num" id="sumCover"></span></div><div class="coverbar"><i id="coverFill" style="width:0"></i></div></div>
+    <div style="grid-column:1/-1"><div class="lbl">中身が分かっている割合 <span class="num" id="sumCover"></span></div><div class="coverbar"><i id="coverFill" style="width:0"></i></div></div>
   </section>
 
   <nav class="tabs" role="tablist">
     <button role="tab" id="tab-co" aria-selected="true" data-tab="co">会社別</button>
-    <button role="tab" id="tab-pie" aria-selected="false" data-tab="pie">円グラフ</button>
-    <button role="tab" id="tab-ov" aria-selected="false" data-tab="ov">比べる</button>
-    <button role="tab" id="tab-sim" aria-selected="false" data-tab="sim">もしも</button>
-    <button role="tab" id="tab-in" aria-selected="false" data-tab="in">保有入力</button>
-    <button role="tab" id="tab-src" aria-selected="false" data-tab="src">商品一覧</button>
+    <button role="tab" id="tab-pie" aria-selected="false" data-tab="pie">グラフ</button>
+    <button role="tab" id="tab-in" aria-selected="false" data-tab="in">入力</button>
+    <button role="tab" id="tab-more" aria-selected="false" data-tab="more">もっと</button>
   </nav>
+  <div class="subnav" id="p-more" hidden role="group" aria-label="もっと見る">
+    <button id="tab-ov" data-sub="ov" aria-pressed="true">投信を比べる</button>
+    <button id="tab-sim" data-sub="sim" aria-pressed="false">買い足すと？</button>
+    <button id="tab-src" data-sub="src" aria-pressed="false">投信の一覧</button>
+  </div>
 
   <section class="panel" id="p-co">
     <div class="toolbar">
@@ -292,24 +308,24 @@ details.more .note{margin-top:6px}
     </div>
     <div class="wm wm-co" aria-hidden="true">@besuko_</div>
     <div class="list" id="coList"></div>
-    <p class="note">会社名を押すと、どの投信からいくら持っているかが出ます。各投信の上位10銘柄は最新の月次レポート、11位以下は直近の運用報告書の数字です。</p>
+    <p class="note">会社名を押すと、どの投信からいくら持っているかが出ます。</p>
   </section>
 
   <section class="panel" id="p-pie" hidden>
     <div class="piebox">
       <div class="pieopts">
         <div class="seg" role="group" aria-label="分け方"><button id="gCo" aria-pressed="true">会社</button><button id="gCountry" aria-pressed="false">国</button><button id="gSector" aria-pressed="false">業種</button></div>
-        <label class="chk"><input type="checkbox" id="incUnseen">見えない部分も入れる</label>
+        <label class="chk"><input type="checkbox" id="incUnseen">その他（小さい銘柄・現金など）も入れる</label>
       </div>
       <div class="piewrap"><svg id="pie" viewBox="0 0 320 320" role="img" aria-label="保有の内訳の円グラフ"></svg><span class="wm" aria-hidden="true">@besuko_</span></div>
       <div class="plist" id="plist"></div>
     </div>
-    <p class="note">円や一覧を押すと、その会社の金額と割合が真ん中に出ます。もう一度押すと全体に戻ります。「見えない部分も入れる」を外すと、見えている会社だけで100%になります。円には上位30社までを描き、それより小さい会社は「その他の会社」にまとめています。一覧には全社が出ます。</p>
+    <p class="note">円や一覧を押すと、その会社の金額が真ん中に出ます。</p>
   </section>
 
   <section class="panel" id="p-ov" hidden>
-    <p class="note">比べたい投信を選ぶと、それぞれの中身を並べて見られます。持っていない投信も選べます。表は、選んだ投信を同じ金額ずつ持ったとしたときに多い順の20社。マスの数字はその投信の中でその会社が占める割合（%）で、色が濃いほど大きい。右端は選んだ投信の平均です。</p>
-    <div class="card heatpick"><div class="lbl">比べる投信（10本まで。名前を押すと中身、×で外せます）</div>
+    <p class="note">投信を選ぶと、中身を並べて比べられます。マスの数字は、その投信の中での割合（%）です。</p>
+    <div class="card heatpick"><div class="lbl">比べる投信（10本まで）</div>
       <div class="chips" id="heatLeg"></div>
       <div class="addrow"><select id="heatAdd" aria-label="比べる投信を足す"></select><button class="rm" id="heatReset" hidden>持っている投信に戻す</button></div></div>
     <div class="heatwrap"><table class="heat" id="heat"></table></div>
@@ -336,19 +352,19 @@ details.more .note{margin-top:6px}
   </section>
 
   <section class="panel" id="p-in" hidden>
-    <div class="card"><label for="addFund" class="lbl">持っている投信を追加</label>
+    <div class="card"><label for="addFund" class="lbl">持っている投信を入れる</label>
       <div class="addrow"><select id="addFund"></select></div>
-      <button class="ghost" id="pickOpen" aria-expanded="false" aria-controls="pickBox">名前で探して、まとめて選ぶ</button>
+      <button class="ghost" id="pickOpen" aria-expanded="false" aria-controls="pickBox">名前で探して入れる</button>
       <div class="pickbox" id="pickBox" hidden>
         <input id="pickQ" type="search" enterkeyhint="search" autocomplete="off" placeholder="例 オルカン、S&amp;P、高配当" aria-label="投信の名前で探す">
         <div class="picklist" id="pickList" role="group" aria-label="追加する投信"></div>
         <div class="pickbar"><button class="cta" id="pickAdd" disabled>投信に印を付けてください</button><button class="rm" id="pickClose">閉じる</button></div>
       </div>
-      <button class="ghost" id="impOpen" aria-expanded="false" aria-controls="impBox">証券会社の保有一覧から読み込む（スクショ・CSV）</button>
+      <button class="ghost" id="impOpen" aria-expanded="false" aria-controls="impBox">スクショ・CSVで入れる</button>
       <div class="pickbox" id="impBox" hidden>
-        <p class="note">証券会社のアプリやサイトで保有一覧の画面をスクショして選ぶと、投信と金額を読み取ります。下までスクロールして何枚かに分けて撮ったときは、まとめて選んでください（重なって写った分は1回だけ数えます）。写真はこのスマホの中で読み取り、どこにも送りません。</p>
+        <p class="note">証券会社アプリの保有一覧をスクショして選ぶだけ。何枚でもまとめて選べます。写真はどこにも送りません。</p>
         <div class="pickbar"><button class="cta" id="ocrBtn">スクショを選ぶ</button><button class="cta" id="impFileBtn">CSVファイルを選ぶ</button></div><input type="file" id="ocrFile" accept="image/*" multiple hidden><input type="file" id="impFile" accept=".csv,text/csv,text/plain" hidden>
-        <p class="note">CSVは、証券会社のサイトの保有一覧（ポートフォリオ）からダウンロードしたファイルをそのまま選べます。</p>
+        <p class="note">CSVは、楽天証券・SBI証券のサイトの保有一覧からダウンロードしたファイルをそのまま選べます。</p>
         <div id="ocrMsg" class="note" hidden></div>
         <details class="more imphow"><summary>ほかの入れ方（文字の貼り付け）</summary>
           <textarea id="impText" rows="4" placeholder="保有一覧の文字をここに貼り付け" aria-label="保有一覧の文字"></textarea>
@@ -358,7 +374,7 @@ details.more .note{margin-top:6px}
         <div class="pickbar" id="impBar" hidden><button class="cta" id="impApply" disabled>入れる投信に印を付けてください</button><button class="rm" id="impClose">閉じる</button></div>
       </div>
       </div>
-    <p class="note">持っている投信を追加して、いま持っている金額を入れると、中身が合算されます。入力はこのスマホの中だけに保存され、ほかの人には見えません。「↑」「↓」で並び順を変えられます。</p>
+    <p class="note">金額を入れると、中身が合算されます。入力はこのスマホの中だけに保存されます。</p>
     <div id="inList" class="panel"></div>
   </section>
 
@@ -457,7 +473,7 @@ details.more .note{margin-top:6px}
 
   // ---- 描画 ----
   function render(){
-    $('#sampleNote').hidden = !sample;
+    $('#sampleNote').hidden = !(sample || !funds.length); $('#stNote').hidden = !sample;
     if (!funds.length){
       const msg = '<div class="empty-state">「保有入力」で証券会社の保有一覧を貼り付けるか、持っている投信を選ぶと、中身がここに出ます。</div>';
       $('#coList').innerHTML = msg; $('#plist').innerHTML = ''; $('#pie').innerHTML = ''; renderHeat(compute()); renderSources();
@@ -468,7 +484,7 @@ details.more .note{margin-top:6px}
     }
     const r = compute();
     const dates = funds.map(f => f.asOf).filter(Boolean).sort();
-    $('#asof').textContent = dates.length ? `月次レポート基準日 ${fmtDate(dates[0])}${dates[0] !== dates[dates.length-1] ? '〜' + fmtDate(dates[dates.length-1]) : ''}・${funds.length}本` : '';
+    $('#asof').textContent = dates.length ? `${funds.length}本を合算・${fmtMonth(dates[0])}時点のデータ` : '';
     $('#sumTotal').textContent = yen(r.total);
     setTops(r);
     const cover = r.total ? Math.min(100, r.seen / r.total * 100) : 0;
@@ -496,7 +512,7 @@ details.more .note{margin-top:6px}
     const unseen = Math.max(0, r.total - r.seen);
     if (r.list.length > coLimit) html += `<div class="row"><button data-more="co" style="justify-content:center;grid-template-columns:1fr;text-align:center;color:var(--accent);font-weight:600">残り${r.list.length - coLimit}社を表示</button></div>`;
     if (r.total > 0) html += `<div class="row unseen-row"><button disabled style="cursor:default">
-        <span class="rank">—</span><span class="cname">見えない部分（小さい銘柄・現金など）</span>
+        <span class="rank">—</span><span class="cname">その他（小さい銘柄・現金など）</span>
         <span class="cval num">${mode === 'yen' ? yen(unseen) : pct(unseen / r.total * 100, 1)}</span>
         <span class="cmeta">資料に載らない小さい銘柄や、現金・オプションなど株以外の部分</span><span class="cpct num">${mode === 'yen' ? pct(unseen / r.total * 100, 1) : man(unseen)}</span></button></div>`;
     $('#coList').innerHTML = html;
@@ -519,7 +535,7 @@ details.more .note{margin-top:6px}
       items = [...m.values()].sort((a,b) => b.amt - a.amt).map(g => ({ ...g, sub: g.n + '社' }));
     }
     items.forEach((it,i) => { it.color = it.key === '__rest' ? 'var(--pie-rest)' : i < 8 ? `var(${SLOTS[i]})` : `var(${OTHER_SHADES[i % 2]})`; });
-    if (pieUnseen && r.total - r.seen > 0) items.push({ key: '__unseen', name: '見えない部分', amt: r.total - r.seen, color: 'var(--unseen)', sub: '小さい銘柄・現金など' });
+    if (pieUnseen && r.total - r.seen > 0) items.push({ key: '__unseen', name: 'その他（小さい銘柄・現金など）', amt: r.total - r.seen, color: 'var(--unseen)', sub: '小さい銘柄・現金など' });
     return items;
   }
   function arc(cx, cy, r0, r1, a0, a1){
@@ -543,7 +559,7 @@ details.more .note{margin-top:6px}
       a += da;
     }
     const sel = restSel ? { name: restSel.name, amt: restSel.total, share: restSel.total / sum * 100 } : items.find(i => i.key === pieSel);
-    const lines = sel ? [sel.name, pct(sel.share, 2), man(sel.amt)] : [pieUnseen ? '投信の評価額 合計' : '見えている中身', man(sum), (pieGroup === 'co' ? r.list.length + '社' : items.filter(i => i.key !== '__unseen').length + (pieGroup === 'country' ? 'か国' : '業種'))];
+    const lines = sel ? [sel.name, pct(sel.share, 2), man(sel.amt)] : [pieUnseen ? '投信の評価額 合計' : '中身が分かっている分', man(sum), (pieGroup === 'co' ? r.list.length + '社' : items.filter(i => i.key !== '__unseen').length + (pieGroup === 'country' ? 'か国' : '業種'))];
     const nm = lines[0].length > 11 ? lines[0].slice(0, 10) + '…' : lines[0];
     $('#pie').innerHTML = paths + `<g class="pie-center" text-anchor="middle"><text class="t1" x="160" y="140">${esc(nm)}</text><text class="t2 num" x="160" y="168">${esc(lines[1])}</text><text class="t3 num" x="160" y="190">${esc(lines[2])}</text></g>`;
     const row = (it, color, share) => `<button data-k="${esc(it.key)}" aria-pressed="${pieSel === it.key}"><i class="dot" style="background:${color}"></i><span class="n">${esc(it.name)}</span><span class="p num">${pct(share, 2)}</span><span class="y num">${man(it.amt)}</span></button>`;
@@ -697,14 +713,14 @@ details.more .note{margin-top:6px}
     };
     const order = f => (hs.has(f.code) ? 0 : 1000) + (hs.has(f.code) ? funds.indexOf(f) : (f.order || 99));
     const nSib = all.filter(f => f.sibOf).length;
-    let h = `<p class="note">このアプリに登録している${all.length - nSib}本です${nSib ? `（同じ中身の兄弟コースを含めると${all.length}本）` : ''}。押すと中身（構成銘柄の割合）と資料が見られます。</p>`;
+    let h = `<p class="note">このアプリに登録している${all.length - nSib}本です${nSib ? `（同じ中身の兄弟コースを含めると${all.length}本）` : ''}。押すと中身が見られます。</p>`;
     for (const k of KINDS){
       const list = all.filter(f => kindOf(f) === k.id && (!f.sibOf || hs.has(f.code))).sort((a, b) => order(a) - order(b));
       if (!list.length) continue;
       h += `<section class="kgroup"><h3 class="listh">${esc(k.name)}<span class="cnt">${list.length}本</span></h3><p class="note">${esc(k.desc)}</p><div class="list flist">${list.map(row).join('')}</div></section>`;
     }
     const updated = all.map(f => f.updatedAt).filter(Boolean).sort().pop();
-    if (updated) h += `<p class="note">データの最終更新 ${esc(fmtDate(updated))}。毎月、新しい月次レポートが出たあとに入れ替わります。</p>`;
+    if (updated) h += `<p class="note">データの最終更新 ${esc(fmtDate(updated))}（毎月入れ替わります）。</p>`;
     $('#srcList').innerHTML = h;
   }
   function docsHtml(f){
@@ -720,6 +736,7 @@ details.more .note{margin-top:6px}
       </div>`;
   }
 
+  function fmtMonth(s){ const m = String(s || '').match(/(\d{4})-(\d{2})/); return m ? `${+m[1]}年${+m[2]}月末` : ''; }
   function fmtDate(s){ if(!s) return '—'; const m = String(s).match(/(\d{4})-(\d{2})-(\d{2})/); return m ? `${+m[1]}年${+m[2]}月${+m[3]}日` : s; }
   function fmtIn(v){ const n = numOrNull(v); return n == null ? '' : n.toLocaleString('ja-JP', {maximumFractionDigits: 2}); }
 
@@ -816,7 +833,7 @@ details.more .note{margin-top:6px}
         <h3>${title}</h3>
         <div class="simgrid">
           ${kpi('評価額の合計', B.total, A.total, man)}
-          ${kpi('見えている会社の数', B.list.length, A.list.length, v => v + '社')}
+          ${kpi('入っている会社の数', B.list.length, A.list.length, v => v + '社')}
           ${kpi('上位10社の集中度', top10(B), top10(A), v => v.toFixed(1) + '%', true)}
           ${kpi(`いちばん多い会社（${esc(topA ? topA.name : '—')}）`, topA ? sh((B.map.get(topA.key) || { total: 0 }).total, B.total) : 0, topA ? sh(topA.total, A.total) : 0, v => v.toFixed(2) + '%', true)}
         </div>
@@ -841,12 +858,20 @@ details.more .note{margin-top:6px}
   document.querySelectorAll('[data-amt]').forEach(b => b.addEventListener('click', () => { simAmt = +b.dataset.amt; $('#simAmt').value = simAmt.toLocaleString('ja-JP'); renderSim(); }));
 
   // ---- 操作 ----
-  document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
-    document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
-    ['co','pie','ov','sim','in','src'].forEach(t => $('#p-' + t).hidden = t !== b.dataset.tab);
-    try { localStorage.setItem('tab', b.dataset.tab); } catch(e){}
-  }));
-  try { const t = localStorage.getItem('tab'); if (t) document.querySelector(`.tabs [data-tab="${t}"]`)?.click(); } catch(e){}
+  // タブは4つ。「もっと」の中に、比べる・買い足すと・投信の一覧
+  let subTab = 'ov';
+  function goTab(t){
+    if (['ov','sim','src'].includes(t)){ subTab = t; t = 'more'; }
+    document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x.dataset.tab === t));
+    document.querySelectorAll('#p-more [data-sub]').forEach(x => x.setAttribute('aria-pressed', x.dataset.sub === subTab));
+    $('#p-more').hidden = t !== 'more';
+    ['co','pie','in'].forEach(x => $('#p-' + x).hidden = x !== t);
+    ['ov','sim','src'].forEach(x => $('#p-' + x).hidden = !(t === 'more' && x === subTab));
+    try { localStorage.setItem('tab', t === 'more' ? subTab : t); } catch(e){}
+  }
+  document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => goTab(b.dataset.tab)));
+  document.querySelectorAll('#p-more [data-sub]').forEach(b => b.addEventListener('click', () => goTab(b.dataset.sub)));
+  try { const t = localStorage.getItem('tab'); if (t) goTab(t); } catch(e){}
   $('#mYen').onclick = () => { mode = 'yen'; $('#mYen').setAttribute('aria-pressed', true); $('#mPct').setAttribute('aria-pressed', false); render(); };
   $('#mPct').onclick = () => { mode = 'pct'; $('#mPct').setAttribute('aria-pressed', true); $('#mYen').setAttribute('aria-pressed', false); render(); };
   $('#coList').addEventListener('click', e => {
@@ -1380,7 +1405,7 @@ details.more .note{margin-top:6px}
     let h = list.slice(0, sheetLimit).map((x, i) => line(x, i + 1)).join('');
     if (list.length > sheetLimit) h += `<button class="sheet-more" data-more="1">残り${list.length - sheetLimit}件を表示</button>`;
     const rest = Math.max(0, 100 - seen);
-    if (rest > 0.05) h += line({ name: '見えない部分（小さい銘柄・現金など）', w: rest, meta: '月次レポート・報告書に載らない部分' }, '—', ' unseen');
+    if (rest > 0.05) h += line({ name: 'その他（小さい銘柄・現金など）', w: rest, meta: '月次レポート・報告書に載らない部分' }, '—', ' unseen');
     $('#sheetBody').innerHTML = h;
   }
   $('#sheetX').addEventListener('click', closeSheet);
@@ -1390,7 +1415,10 @@ details.more .note{margin-top:6px}
   $('#sheetBody').addEventListener('click', e => { if (e.target.closest('[data-more]')) { sheetLimit += 100; renderSheet(); } });
   document.addEventListener('click', e => { const b = e.target.closest('[data-open]'); if (b) { e.preventDefault(); openSheet(b.dataset.open, b); } });
 
-  $('#goInput').addEventListener('click', () => { $('#tab-in').click(); toggleImp(true); setTimeout(() => { $('#impBox').scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 0); });
+  const toIn = box => { goTab('in'); setTimeout(() => { $(box).scrollIntoView({ block: 'start', behavior: 'smooth' }); }, 0); };
+  $('#stShot').addEventListener('click', () => { toggleImp(true); toIn('#impBox'); if (!ocrBusy) $('#ocrFile').click(); });
+  $('#stCsv').addEventListener('click', () => { toggleImp(true); toIn('#impBox'); $('#impFile').click(); });
+  $('#stPick').addEventListener('click', () => { togglePick(true); toIn('#pickBox'); });
 
   // ---- データ読み込み ----
   // 同じマザーファンドに投資する兄弟コース（決算の頻度・為替ヘッジ・コース名だけが違う）は、中身を代表の投信と同じにして並べる
