@@ -210,7 +210,10 @@ details.more .note{margin-top:6px}
 .pickbar .rm{margin-left:0;padding:10px 12px}
 .pickbox textarea{font:inherit;font-size:16px;line-height:1.45;padding:9px 10px;border:1px solid var(--line-2);border-radius:9px;background:var(--bg);color:var(--ink);width:100%;min-width:0;resize:vertical}
 .impsteps{margin:6px 0 0;padding-left:1.4em;font-size:13px;color:var(--ink-2);display:flex;flex-direction:column;gap:3px}
-.imphow{border-top:0;padding-top:0}
+.imphow{display:flex;flex-direction:column;gap:8px}
+.imphow[open]{gap:8px}
+.imphow textarea{margin-top:8px}
+#ocrBtn{margin:0}
 .impout{display:flex;flex-direction:column;gap:8px}
 .imph{margin:0;font-weight:700;font-size:14px}
 .impit{display:grid;grid-template-columns:22px 1fr auto;gap:2px 10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--bg);cursor:pointer}
@@ -328,15 +331,15 @@ details.more .note{margin-top:6px}
         <div class="picklist" id="pickList" role="group" aria-label="追加する投信"></div>
         <div class="pickbar"><button class="cta" id="pickAdd" disabled>投信に印を付けてください</button><button class="rm" id="pickClose">閉じる</button></div>
       </div>
-      <button class="ghost" id="impOpen" aria-expanded="false" aria-controls="impBox">証券会社の画面やCSVから読み込む</button>
+      <button class="ghost" id="impOpen" aria-expanded="false" aria-controls="impBox">証券会社の保有一覧のスクショから読み込む</button>
       <div class="pickbox" id="impBox" hidden>
-        <p class="note">証券会社の保有一覧の文字を貼り付けるか、保有一覧のCSVファイルを選ぶと、持っている投信と金額を読み取ります。読み取りはこのスマホの中だけで行います。</p>
-        <details class="more imphow"><summary>スクショから文字をコピーする方法（iPhone）</summary>
-          <ol class="impsteps"><li>証券会社のアプリやサイトで、保有一覧の画面をスクショする</li><li>写真アプリでそのスクショを開き、文字を長押しして「すべてを選択」→「コピー」</li><li>下の枠を長押しして「ペースト」</li></ol>
-          <p class="note">証券会社のサイトなら、画面の文字をそのまま選んでコピーしても読み取れます。何枚かに分かれるときは、続けて貼り付けてかまいません。</p>
+        <p class="note">証券会社のアプリやサイトで保有一覧の画面をスクショして選ぶと、投信と金額を読み取ります。何枚でも選べます。写真はこのスマホの中で読み取り、どこにも送りません。</p>
+        <button class="cta" id="ocrBtn">スクショを選ぶ</button><input type="file" id="ocrFile" accept="image/*" multiple hidden>
+        <div id="ocrMsg" class="note" hidden></div>
+        <details class="more imphow"><summary>ほかの入れ方（文字の貼り付け・CSV）</summary>
+          <textarea id="impText" rows="4" placeholder="保有一覧の文字をここに貼り付け" aria-label="保有一覧の文字"></textarea>
+          <div class="pickbar"><button class="cta" id="impRead">読み取る</button><button class="rm" id="impFileBtn">CSVを選ぶ</button><input type="file" id="impFile" accept=".csv,text/csv,text/plain,text/comma-separated-values" hidden></div>
         </details>
-        <textarea id="impText" rows="5" placeholder="ここに貼り付け" aria-label="保有一覧の文字"></textarea>
-        <div class="pickbar"><button class="cta" id="impRead">読み取る</button><button class="rm" id="impFileBtn">CSVを選ぶ</button><input type="file" id="impFile" accept=".csv,text/csv,text/plain,text/comma-separated-values" hidden></div>
         <div id="impOut" class="impout" hidden></div>
         <div class="pickbar" id="impBar" hidden><button class="cta" id="impApply" disabled>入れる投信に印を付けてください</button><button class="rm" id="impClose">閉じる</button></div>
       </div>
@@ -1030,7 +1033,7 @@ details.more .note{margin-top:6px}
     for (let i = pick.length - 1; i >= 0; i--){ const h = pick[i]; if (badTail(h.f, N.slice(h.e, h.e + 12)) || /(\.\.\.|…)\s*$/.test(lines[h.b])){ odd.push(lines.slice(h.a, h.b + 1).join('')); pick.splice(i, 1); } }
     const used = new Set(); pick.forEach(h => { for (let i = h.a; i <= h.b; i++) used.add(i); });
     // 投信名らしいのに一致しなかった行（このアプリに無い投信）。ここで区切りにもする
-    const isMiss = i => !used.has(i) && LOOKS_FUND.test(lines[i]) && normQ(lines[i]).length >= 8 && !/\d\s*(円|口)|口座|合計|評価|損益|一覧|積立|NISA|特定|一般|詳細|内訳/.test(lines[i]);
+    const isMiss = i => !used.has(i) && LOOKS_FUND.test(lines[i]) && normQ(lines[i]).length >= 8 && !/\d\s*(円|口)|口座|合計|評価|損益|一覧|積立|NISA|特定|一般|詳細|内訳|分配金コース|受取型|再投資型/.test(lines[i]);
     const miss = lines.filter((l, i) => isMiss(i));
     const NUMLINE = /\d\s*(円|口|株)|^[¥￥]\s*\d/;
     let items = pick.map((h, i) => {
@@ -1156,10 +1159,48 @@ details.more .note{margin-top:6px}
   }
   function toggleImp(open){
     $('#impBox').hidden = !open; $('#impOpen').hidden = open; $('#impOpen').setAttribute('aria-expanded', open);
-    if (!open){ $('#impText').value = ''; $('#impOut').hidden = true; $('#impOut').innerHTML = ''; $('#impBar').hidden = true; impRes = []; $('#impFile').value = ''; }
+    if (!open){ ocrSay(''); $('#impText').value = ''; $('#impOut').hidden = true; $('#impOut').innerHTML = ''; $('#impBar').hidden = true; impRes = []; $('#impFile').value = ''; }
   }
   $('#impOpen').addEventListener('click', () => toggleImp(true));
   $('#impClose').addEventListener('click', () => { toggleImp(false); $('#impOpen').focus(); });
+  // ---- スクショの文字をスマホの中で読み取る（Tesseract.js） ----
+  let ocrWorker = null, ocrBusy = false;
+  function loadScript(src){ return new Promise((ok, ng) => { const el = document.createElement('script'); el.src = src; el.onload = ok; el.onerror = () => ng(new Error('load')); document.head.appendChild(el); }); }
+  async function getOcr(){
+    if (ocrWorker) return ocrWorker;
+    if (!window.Tesseract) await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');
+    ocrWorker = await window.Tesseract.createWorker('jpn+eng');
+    return ocrWorker;
+  }
+  // 文字認識の読み違いの癖を直す：「3.743」→「3,743」、行が金額だけで「円」が「F」などに化けたとき
+  function ocrFix(t){
+    return String(t || '').normalize('NFKC').split(/\r?\n/).map(l => {
+      let x = l, y;
+      do { y = x; x = x.replace(/(\d)\.(\d{3})(?=\D|$)/g, '$1,$2'); } while (x !== y);
+      const m = x.match(/^\s*(\d{1,3}(?:,\d{3})+)\s*(?:[A-Za-z]{1,2}|[^\d円口株%¥+\-−\s]{1,3})?\s*$/);
+      return m ? m[1] + ' 円' : x;
+    }).join('\n');
+  }
+  function ocrSay(t){ const el = $('#ocrMsg'); el.hidden = !t; el.textContent = t || ''; }
+  $('#ocrBtn').addEventListener('click', () => { if (!ocrBusy) $('#ocrFile').click(); });
+  $('#ocrFile').addEventListener('change', async e => {
+    const files = [...(e.target.files || [])].filter(f => /^image\//.test(f.type) || /\.(png|jpe?g|heic|webp)$/i.test(f.name)); e.target.value = '';
+    if (!files.length) return;
+    ocrBusy = true; $('#ocrBtn').disabled = true; $('#impOut').hidden = true; $('#impBar').hidden = true;
+    ocrSay(ocrWorker ? '読み取っています…' : '読み取りの準備をしています（はじめての時だけ少しかかります）…');
+    try {
+      const w = await getOcr(); let text = '';
+      for (let i = 0; i < files.length; i++){
+        ocrSay(`読み取っています…（${i + 1}／${files.length}枚）`);
+        const r = await w.recognize(files[i]);
+        text += (r && r.data && r.data.text || '') + '\n';
+      }
+      ocrSay(''); showImp(parsePaste(ocrFix(text)), files.length > 1 ? `${files.length}枚のスクショ` : 'スクショ');
+    } catch(err){
+      ocrSay('読み取れませんでした。電波のよい所でもう一度試すか、「ほかの入れ方」から文字を貼り付けてください。');
+    } finally { ocrBusy = false; $('#ocrBtn').disabled = false; }
+  });
+
   $('#impRead').addEventListener('click', () => {
     const t = $('#impText').value;
     if (!t.trim()){ $('#impOut').innerHTML = '<p class="note">上の枠に、保有一覧の文字を貼り付けてください。</p>'; $('#impOut').hidden = false; $('#impBar').hidden = true; return; }
