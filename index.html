@@ -1571,13 +1571,13 @@ details.more .note{margin-top:6px}
     g.fillStyle = '#cdd2c6'; g.fillRect(64, fy, W - 128, 2);
     // 右下の署名は控えめに。アカウント名と案内文の横幅をそろえる
     const NOTE = 'アプリはプロフィールから';
-    g.font = `600 17px ${F}`; const wn = g.measureText(NOTE).width;
-    g.font = `700 34px ${F}`; const chars = [...'@besuko_'], cw = chars.map(c => g.measureText(c).width), wb = cw.reduce((x, y) => x + y, 0);
+    g.font = `600 15px ${F}`; const wn = g.measureText(NOTE).width;
+    g.font = `700 28px ${F}`; const chars = [...'@besuko_'], cw = chars.map(c => g.measureText(c).width), wb = cw.reduce((x, y) => x + y, 0);
     const sp = Math.max(0, Math.min(6, (wn - wb) / (chars.length - 1)));  // 文字の間を少し空けて、案内文と同じ横幅に
     let x = W - 64 - (wb + sp * (chars.length - 1));
-    g.textAlign = 'left'; g.fillStyle = '#1f6b45';
-    chars.forEach((c, i) => { g.fillText(c, x, fy + 58); x += cw[i] + sp; });
-    g.fillStyle = '#868b82'; g.font = `600 17px ${F}`; g.textAlign = 'right'; g.fillText(NOTE, W - 64, fy + 88);
+    g.textAlign = 'left'; g.fillStyle = '#5f9a78';
+    chars.forEach((c, i) => { g.fillText(c, x, fy + 54); x += cw[i] + sp; });
+    g.fillStyle = '#9aa095'; g.font = `600 15px ${F}`; g.textAlign = 'right'; g.fillText(NOTE, W - 64, fy + 80);
     g.textAlign = 'left';
     // まん中のアカウント名：中身に薄く重ねる（切り取っても残り、数字は読める薄さ）
     if (cy){ g.save(); g.globalAlpha = 0.18; g.fillStyle = '#151714'; g.font = `600 24px ${F}`; g.textAlign = 'center'; g.fillText('@besuko_', W / 2, cy); g.restore(); }
