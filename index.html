@@ -327,9 +327,9 @@ details.more .note{margin-top:6px}
     <button role="tab" id="tab-co" aria-selected="true" data-tab="co">会社別</button>
     <button role="tab" id="tab-pie" aria-selected="false" data-tab="pie">グラフ</button>
     <button role="tab" id="tab-in" aria-selected="false" data-tab="in">入力</button>
-    <button role="tab" id="tab-more" aria-selected="false" data-tab="more">もっと</button>
+    <button role="tab" id="tab-more" aria-selected="false" data-tab="more">深掘り</button>
   </nav>
-  <div class="subnav" id="p-more" hidden role="group" aria-label="もっと見る">
+  <div class="subnav" id="p-more" hidden role="group" aria-label="深掘り">
     <button id="tab-ov" data-sub="ov" aria-pressed="true">投信を比べる</button>
     <button id="tab-sim" data-sub="sim" aria-pressed="false">買い足すと？</button>
     <button id="tab-src" data-sub="src" aria-pressed="false">投信の一覧</button>
@@ -1052,7 +1052,7 @@ details.more .note{margin-top:6px}
   document.querySelectorAll('[data-amt]').forEach(b => b.addEventListener('click', () => { simAmt = +b.dataset.amt; $('#simAmt').value = simAmt.toLocaleString('ja-JP'); renderSim(); }));
 
   // ---- 操作 ----
-  // タブは4つ。「もっと」の中に、比べる・買い足すと・投信の一覧
+  // タブは4つ。「深掘り」の中に、比べる・買い足すと・投信の一覧
   let subTab = 'ov';
   function goTab(t){
     if (['ov','sim','src'].includes(t)){ subTab = t; t = 'more'; }
