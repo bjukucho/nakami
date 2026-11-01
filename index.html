@@ -23,7 +23,7 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(-
 </form>
 <script>
 (function(){
-  var P={"s": "ao69CwvoQXoI9j4Wc4jDoQ==", "i": "8wZRbj+Mo6r1miQq", "n": 200000},V="VhFPnks7";
+  var P={"s": "D4XN5FZpjvuq0xUQjPx/zA==", "i": "pYFlXPW/uhBhf+4+", "n": 200000},V="fIBxntI1";
   var K='nakami-word';
   function norm(s){s=String(s||'').normalize('NFKC').trim().toLowerCase().replace(/\s+/g,'');return s.replace(/[\u30a1-\u30f6]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0x60);});}
   function bin(b){var s=atob(b),a=new Uint8Array(s.length);for(var i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return a;}
@@ -38,19 +38,22 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(-
     var buf=await crypto.subtle.decrypt({name:'AES-GCM',iv:bin(P.i)},key,DATA);
     return new TextDecoder().decode(buf);
   }
+  // アクセス数（GoatCounter）：入口を開いた回数と、合言葉で開いた回数だけを送る。入力した投信や金額は送らない
+  function gc(path,title,ev){try{var u='https://nakami.goatcounter.com/count?p='+encodeURIComponent(path)+'&t='+encodeURIComponent(title)+(ev?'&e=true':'')+'&r='+encodeURIComponent(document.referrer||'')+'&s='+screen.width+','+screen.height+','+(window.devicePixelRatio||1)+'&rnd='+Math.random().toString(36).slice(2);var i=new Image();return new Promise(function(res){var d=false,f=function(){if(!d){d=true;res();}};i.onload=i.onerror=f;setTimeout(f,700);i.src=u;});}catch(e){return Promise.resolve();}}
+  gc('/','投信中身マップ（入口）',false);
   function show(html){document.open();document.write(html);document.close();}
   var f=document.getElementById('f'),w=document.getElementById('w'),b=document.getElementById('b'),msg=document.getElementById('msg');
   function form(text){f.hidden=false;if(text)document.getElementById('lead').textContent=text;w.focus();}
   f.addEventListener('submit',async function(e){
     e.preventDefault();var v=norm(w.value);if(!v){msg.textContent='合言葉を入れてください。';return;}
     b.disabled=true;msg.textContent='';
-    try{var html=await open(v);put(v);show(html);}
+    try{var html=await open(v);put(v);await gc('unlock','合言葉を入れて開いた',true);show(html);}
     catch(err){b.disabled=false;msg.textContent=!(window.crypto&&crypto.subtle)?'このブラウザでは開けません。Safari や Chrome の新しい版で開いてください。':(err&&err.message==='net')?'読み込めませんでした。電波のよい所でもう一度お試しください。':'合言葉が違います。';}
   });
   var saved=get();
   if(saved&&window.crypto&&crypto.subtle){
     if(Date.now()-(saved.t||0)>=WEEK) form('1週間たったので、もう一度合言葉を入れてください。');
-    else open(saved.w).then(show,function(err){form((err&&err.message==='net')?'読み込めませんでした。電波のよい所で、合言葉を入れてもう一度お試しください。':'合言葉が新しくなりました。新しい合言葉を入れてください。');});
+    else open(saved.w).then(function(html){gc('auto-open','保存した合言葉で開いた',true).then(function(){show(html);});},function(err){form((err&&err.message==='net')?'読み込めませんでした。電波のよい所で、合言葉を入れてもう一度お試しください。':'合言葉が新しくなりました。新しい合言葉を入れてください。');});
   }
   else form();
 })();
