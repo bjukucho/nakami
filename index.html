@@ -1570,12 +1570,10 @@ details.more .note{margin-top:6px}
   // 画像の下の帯・右上のアカウント名・全体の薄い透かし（どの画像も同じ）
   function picDeco(g, W, H, fy, F, cy){
     g.fillStyle = '#cdd2c6'; g.fillRect(64, fy, W - 128, 2);
-    g.fillStyle = '#151714'; g.font = `800 38px ${F}`; g.fillText('投信中身マップ', 64, fy + 70);
-    g.fillStyle = '#868b82'; g.font = `600 24px ${F}`; g.fillText('プロデュース by ベス子', 64, fy + 112);
     g.fillStyle = '#1f6b45'; g.font = `800 44px ${F}`; g.textAlign = 'right'; g.fillText('@besuko_', W - 64, fy + 74);
     g.fillStyle = '#4f544c'; g.font = `600 24px ${F}`; g.fillText('アプリはプロフィールから', W - 64, fy + 112); g.textAlign = 'left';
     // アカウント名は画像のまん中に1つだけ、見えるか見えないかの薄さで
-    if (cy){ g.save(); g.globalAlpha = 0.1; g.fillStyle = '#151714'; g.font = `600 24px ${F}`; g.textAlign = 'center'; g.fillText('@besuko_', W / 2, cy); g.restore(); }
+    if (cy){ g.save(); g.globalAlpha = 0.16; g.fillStyle = '#151714'; g.font = `600 24px ${F}`; g.textAlign = 'center'; g.fillText('@besuko_', W / 2, cy); g.restore(); }
   }
   const PIC_HEX = { '--s1':'#2a78d6','--s2':'#eb6834','--s3':'#1baf7a','--s4':'#eda100','--s5':'#e87ba4','--s6':'#008300','--s7':'#6250d6','--s8':'#e34948','--s9':'#9a6324','--s10':'#0f8ea6','--pie-a':'#8f978a','--pie-b':'#b4bbae','--pie-rest':'#dfe3da','--unseen':'#c9cdc3' };
   const picHex = c => { const m = String(c).match(/var\((--[\w-]+)\)/); return m ? (PIC_HEX[m[1]] || '#8f978a') : c; };
@@ -1618,7 +1616,7 @@ details.more .note{margin-top:6px}
       g.textAlign = 'left'; g.fillStyle = '#151714'; g.fillText(fit(e.name, right - 120 - pw - 24), 120, ys);
     });
     if (more > 0){ g.fillStyle = '#868b82'; g.font = `600 26px ${F}`; g.fillText(`ほか${more}${pieGroup === 'co' ? '社' : pieGroup === 'country' ? 'か国' : '業種'}`, 120, top + k * rowH + 42); }
-    picDeco(g, W, H, top + k * rowH + (more > 0 ? 60 : 0) + 40, F, Math.round(H / 2));
+    picDeco(g, W, H, top + k * rowH + (more > 0 ? 60 : 0) + 40, F, cy0 + 104);
     return cv;
   }
   // 投信を比べる表の画像：アプリの表と同じ計算（選んだ投信を同じ金額ずつ持ったときの平均で多い順）
@@ -1662,7 +1660,7 @@ details.more .note{margin-top:6px}
       });
       g.fillStyle = '#151714'; g.font = `800 ${k <= 10 ? 28 : 25}px ${F}`; g.textAlign = 'center'; g.fillText(c.avg.toFixed(2) + '%', W - 40 - totW / 2, ys); g.textAlign = 'left';
     });
-    picDeco(g, W, H, top + headH + k * rowH + 40, F, Math.round(H / 2));
+    picDeco(g, W, H, top + headH + k * rowH + 40, F, top - 14);
     return cv;
   }
   function drawPic(n){
@@ -1736,7 +1734,7 @@ details.more .note{margin-top:6px}
         tx += 16 + g.measureText(label).width + 24; shown++;
       }
     });
-    picDeco(g, W, H, top + k * rowH + 40, F, Math.round(H / 2));
+    picDeco(g, W, H, top + k * rowH + 40, F, top - 14);
     return cv;
   }
   function renderPic(){
