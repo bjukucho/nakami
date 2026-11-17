@@ -1,4 +1,4 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>投信中身マップ</title><meta name="description" content="持っている投資信託・ETFの中身（構成銘柄）を合算して、どの会社にいくら投資しているかがひと目で分かります。"><meta property="og:type" content="website"><meta property="og:url" content="https://bjukucho.github.io/nakami/"><meta property="og:title" content="投信中身マップ"><meta property="og:description" content="持っている投資信託・ETFの中身（構成銘柄）を合算して、どの会社にいくら投資しているかがひと目で分かります。"><meta property="og:image" content="https://bjukucho.github.io/nakami/ogp.png?v=2"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="投信中身マップ"><meta name="twitter:description" content="持っている投資信託・ETFの中身（構成銘柄）を合算して、どの会社にいくら投資しているかがひと目で分かります。"><meta name="twitter:image" content="https://bjukucho.github.io/nakami/ogp.png?v=2"><link rel="icon" href="favicon.png?v=2" sizes="48x48" type="image/png"><link rel="icon" href="favicon.svg?v=2" type="image/svg+xml"><link rel="apple-touch-icon" href="apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-title" content="besuko"><meta name="theme-color" content="#1f6b45"><style>
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>投資カルテ</title><meta name="description" content="持っている投資信託・ETFの中身の偏りと、決算日・注文の締め切りがひと目で分かります。"><meta property="og:type" content="website"><meta property="og:url" content="https://bjukucho.github.io/nakami/"><meta property="og:title" content="投資カルテ"><meta property="og:description" content="持っている投資信託・ETFの中身の偏りと、決算日・注文の締め切りがひと目で分かります。"><meta property="og:image" content="https://bjukucho.github.io/nakami/ogp.png?v=3"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="投資カルテ"><meta name="twitter:description" content="持っている投資信託・ETFの中身の偏りと、決算日・注文の締め切りがひと目で分かります。"><meta name="twitter:image" content="https://bjukucho.github.io/nakami/ogp.png?v=3"><link rel="icon" href="favicon.png?v=2" sizes="48x48" type="image/png"><link rel="icon" href="favicon.svg?v=2" type="image/svg+xml"><link rel="apple-touch-icon" href="apple-touch-icon.png?v=2"><meta name="apple-mobile-web-app-title" content="besuko"><meta name="theme-color" content="#1f6b45"><style>
 :root{--bg:#f6f7f4;--surface:#fff;--ink:#151714;--ink-2:#4f544c;--muted:#868b82;--line:#cdd2c6;--accent:#1f6b45;--down:#b3392f;color-scheme:light}
 @media (prefers-color-scheme:dark){:root{--bg:#121411;--surface:#1b1e1a;--ink:#eef0ea;--ink-2:#c1c6bb;--muted:#8c9187;--line:#3a3f37;--accent:#5fbf88;--down:#ef7b70;color-scheme:dark}}
 *{box-sizing:border-box}html,body{margin:0}
@@ -14,7 +14,7 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(-
 .hint{color:var(--muted);font-size:13px}.hint a{color:var(--accent)}
 </style></head><body>
 <form class="box" id="f" hidden autocomplete="off">
-<h1>投信中身マップ</h1>
+<h1>投資カルテ</h1>
 <p id="lead">合言葉を入れると開きます。</p>
 <input id="w" type="text" inputmode="text" enterkeyhint="go" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="合言葉" placeholder="合言葉">
 <div class="msg" id="msg" role="alert"></div>
@@ -23,7 +23,7 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(-
 </form>
 <script>
 (function(){
-  var P={"s": "yIAIS/s4hHcrusyXeZYGGg==", "i": "6wZNKbHxF+uQB8qJ", "n": 200000},V="RfWd0orZ";
+  var P={"s": "+h1IKtnL0GZ9rFppsA1PyA==", "i": "+2WSGxTANEXok1Gw", "n": 200000},V="e-0SGR55";
   var K='nakami-word';
   function norm(s){s=String(s||'').normalize('NFKC').trim().toLowerCase().replace(/\s+/g,'');return s.replace(/[\u30a1-\u30f6]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0x60);});}
   function bin(b){var s=atob(b),a=new Uint8Array(s.length);for(var i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return a;}
@@ -40,7 +40,7 @@ input:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(-
   }
   // アクセス数（GoatCounter）：入口を開いた回数と、合言葉で開いた回数だけを送る。入力した投信や金額は送らない
   function gc(path,title,ev){try{var u='https://nakami.goatcounter.com/count?p='+encodeURIComponent(path)+'&t='+encodeURIComponent(title)+(ev?'&e=true':'')+'&r='+encodeURIComponent(document.referrer||'')+'&s='+screen.width+','+screen.height+','+(window.devicePixelRatio||1)+'&rnd='+Math.random().toString(36).slice(2);var i=new Image();return new Promise(function(res){var d=false,f=function(){if(!d){d=true;res();}};i.onload=i.onerror=f;setTimeout(f,700);i.src=u;});}catch(e){return Promise.resolve();}}
-  gc('/','投信中身マップ（入口）',false);
+  gc('/',"\u6295\u8cc7\u30ab\u30eb\u30c6\uff08\u5165\u53e3\uff09",false);
   function show(html){document.open();document.write(html);document.close();}
   var f=document.getElementById('f'),w=document.getElementById('w'),b=document.getElementById('b'),msg=document.getElementById('msg');
   function form(text){f.hidden=false;if(text)document.getElementById('lead').textContent=text;w.focus();}
